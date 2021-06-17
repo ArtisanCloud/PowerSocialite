@@ -15,7 +15,7 @@ type Employee struct {
 	HideMobile      int             `json:"hide_mobile"`
 	IsLeaderInDept  []int           `json:"is_leader_in_dept"`
 	IsLeader        int             `json:"isleader"`
-	MainDepartment  int          `json:"main_department"`
+	MainDepartment  int             `json:"main_department"`
 	Mobile          string          `json:"mobile"`
 	Name            string          `json:"name"`
 	Order           []int           `json:"order"`
