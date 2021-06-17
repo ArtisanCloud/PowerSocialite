@@ -1,6 +1,7 @@
 package providers
 
 import (
+	"errors"
 	"fmt"
 	"github.com/ArtisanCloud/go-libs/object"
 	"github.com/ArtisanCloud/go-socialite/src"
@@ -37,10 +38,16 @@ func (provider *WeCom) SetAgentID(agentId int) *WeCom {
 	return provider
 }
 
-func (provider *WeCom) UserFromCode(code string, isExternal bool) *src.User {
-	token := provider.GetAPIAccessToken()
-	userInfo := provider.GetUserID(token, code)
+func (provider *WeCom) UserFromCode(code string, isExternal bool) (*src.User, error) {
+	token,err := provider.GetAPIAccessToken()
+	if err!=nil{
+		return nil, err
+	}
 
+	userInfo, err := provider.GetUserID(token, code)
+	if err != nil {
+		return nil, err
+	}
 	var (
 		user       *src.User
 		userDetail *weCom.ResponseGetUserByID
@@ -48,18 +55,24 @@ func (provider *WeCom) UserFromCode(code string, isExternal bool) *src.User {
 	if provider.detailed {
 		if isExternal {
 			// contact
-			userDetail = provider.GetUserByID(userInfo.UserID)
+			userDetail, err = provider.GetUserByID(userInfo.UserID)
 			//userDetail = provider.GetContactByID(userInfo.UserID)
+			if err != nil {
+				return nil, err
+			}
 		} else {
 			// employee
-			userDetail = provider.GetUserByID(userInfo.UserID)
+			userDetail, err = provider.GetUserByID(userInfo.UserID)
+			if err != nil {
+				return nil, err
+			}
 		}
 		user = provider.MapUserToObject(userDetail)
 	} else {
 		user = provider.MapUserToObject(userInfo)
 	}
 
-	return user.SetProvider(provider).SetRaw(user.GetAttributes())
+	return user.SetProvider(provider).SetRaw(user.GetAttributes()), nil
 }
 
 func (provider *WeCom) Detailed() *WeCom {
@@ -88,13 +101,12 @@ func (provider *WeCom) getOAuthURL() string {
 	return strQueries
 }
 
-func (provider *WeCom) GetQrConnectURL() string {
+func (provider *WeCom) GetQrConnectURL() (string, error) {
 	strAgentID := provider.agentId
 	if strAgentID == 0 {
 		strAgentID = provider.config.Get("agentid", 0).(int)
 		if strAgentID == 0 {
-			defer exceptions.NewInvalidArgumentException().HandleException(nil, "base.refresh.token", nil)
-			panic("You must config the `agentid` in configuration or using `setAgentid($agentId)`.")
+			return "", errors.New(fmt.Sprintf("You must config the `agentid` in configuration or using `setAgentid(%d)`.", strAgentID))
 		}
 	}
 
@@ -106,17 +118,20 @@ func (provider *WeCom) GetQrConnectURL() string {
 	}
 	strQueries := object.ConvertStringMapToString(queries)
 	strQueries = "https://open.work.weixin.qq.com/wwopen/sso/qrConnect?" + strQueries + "#wechat_redirect"
-	return strQueries
+	return strQueries, nil
 }
 
-func (provider *WeCom) GetAPIAccessToken() string {
+func (provider *WeCom) GetAPIAccessToken() (result string, err error) {
 	if provider.apiAccessToken == "" {
-		provider.apiAccessToken = provider.createApiAccessToken()
+		provider.apiAccessToken, err = provider.createApiAccessToken()
+		if err != nil {
+			return "", err
+		}
 	}
-	return provider.apiAccessToken
+	return provider.apiAccessToken, nil
 }
 
-func (provider *WeCom) GetUserID(token string, code string) *weCom.ResponseGetUserInfo {
+func (provider *WeCom) GetUserID(token string, code string) (*weCom.ResponseGetUserInfo, error) {
 
 	outResponse := &weCom.ResponseGetUserInfo{}
 	provider.GetHttpClient().PerformRequest(
@@ -135,22 +150,26 @@ func (provider *WeCom) GetUserID(token string, code string) *weCom.ResponseGetUs
 		if outResponse.ErrMSG == "" {
 			outResponse.ErrMSG = "unknow"
 		}
-		panic(fmt.Sprintf("Failed to get user openid:%s", outResponse.ErrMSG))
+		return nil, errors.New(fmt.Sprintf("Failed to get user openid:%s", outResponse.ErrMSG))
 	} else if outResponse.UserID == "" {
 		provider.detailed = false
 	}
-	return outResponse
+	return outResponse, nil
 }
 
-func (provider *WeCom) GetUserByID(userID string) *weCom.ResponseGetUserByID {
+func (provider *WeCom) GetUserByID(userID string) (*weCom.ResponseGetUserByID, error) {
 
 	outResponse := &weCom.ResponseGetUserByID{}
+	strAPIAccessToken, err := provider.GetAPIAccessToken()
+	if err!=nil{
+		return nil, err
+	}
 	provider.GetHttpClient().PerformRequest(
 		"https://qyapi.weixin.qq.com/cgi-bin/user/get",
 		"POST",
 		&object.HashMap{
 			"query": object.StringMap{
-				"access_token": provider.GetAPIAccessToken(),
+				"access_token": strAPIAccessToken,
 				"userid":       userID,
 			},
 		},
@@ -161,13 +180,13 @@ func (provider *WeCom) GetUserByID(userID string) *weCom.ResponseGetUserByID {
 		if outResponse.ErrMSG == "" {
 			outResponse.ErrMSG = "unknow"
 		}
-		panic(fmt.Sprintf("Failed to get user:%s", outResponse.ErrMSG))
+		return nil, errors.New(fmt.Sprintf("Failed to get user:%s", outResponse.ErrMSG))
 	}
 
-	return outResponse
+	return outResponse, nil
 }
 
-func (provider *WeCom) createApiAccessToken() string {
+func (provider *WeCom) createApiAccessToken() (string, error) {
 	outResponse := &weCom.ResponseTokenFromCode{}
 
 	var (
@@ -200,9 +219,9 @@ func (provider *WeCom) createApiAccessToken() string {
 		if outResponse.ErrMSG == "" {
 			outResponse.ErrMSG = "unknow"
 		}
-		panic(fmt.Sprintf("Failed to get api access_token:%s", outResponse.ErrMSG))
+		return "", errors.New(fmt.Sprintf("Failed to get api access_token:%s", outResponse.ErrMSG))
 	}
-	return outResponse.AccessToken
+	return outResponse.AccessToken, nil
 
 }
 
@@ -221,10 +240,10 @@ func (provider *WeCom) IdentifyUserAsContact(user *src.User) (openID string) {
 
 // Override GetCredentials
 func (provider *WeCom) OverrideGetAuthURL() {
-	provider.GetAuthURL = func() string {
+	provider.GetAuthURL = func() (string, error) {
 		// 网页授权登录
 		if len(provider.scopes) > 0 {
-			return provider.getOAuthURL()
+			return provider.getOAuthURL(), nil
 		}
 
 		// 第三方网页应用登录（扫码登录）
@@ -237,9 +256,9 @@ func (provider *WeCom) OverrideGetTokenURL() {
 	}
 }
 func (provider *WeCom) OverrideGetUserByToken() {
-	provider.GetUserByToken = func(token string) *object.HashMap {
-		defer exceptions.NewMethodDoesNotSupportException().HandleException(nil, "base.refresh.token", nil)
-		panic("WeCom doesn't support access_token mode")
+	provider.GetUserByToken = func(token string) (*object.HashMap ,error){
+
+		return nil, errors.New("WeCom doesn't support access_token mode")
 	}
 }
 

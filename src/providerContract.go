@@ -1,7 +1,7 @@
 package src
 
 type ProviderInterface interface {
-	Redirect(redirectURL string) string
-	UserFromCode(code string, isExternal bool) *User
-	UserFromToken(token string) *User
+	Redirect(redirectURL string) (string, error)
+	UserFromCode(code string, isExternal bool) (*User, error)
+	UserFromToken(token string) (*User, error)
 }

@@ -1,11 +1,11 @@
 package providers
 
 import (
+	"errors"
 	"github.com/ArtisanCloud/go-libs/http"
 	contract2 "github.com/ArtisanCloud/go-libs/http/contract"
 	"github.com/ArtisanCloud/go-libs/object"
 	"github.com/ArtisanCloud/go-socialite/src"
-	"github.com/ArtisanCloud/go-socialite/src/exceptions"
 	"github.com/ArtisanCloud/go-socialite/src/response/weCom"
 	"strings"
 )
@@ -26,9 +26,9 @@ type Base struct {
 	accessTokenKey  string
 	refreshTokenKey string
 
-	GetAuthURL      func() string
+	GetAuthURL      func() (string, error)
 	GetTokenURL     func() string
-	GetUserByToken  func(token string) *object.HashMap
+	GetUserByToken  func(token string) (*object.HashMap, error)
 	MapUserToObject func(userData interface{}) *src.User
 }
 
@@ -68,7 +68,7 @@ func NewBase(config *object.HashMap) *Base {
 	return base
 }
 
-func (base *Base) Redirect(redirectURL string) string {
+func (base *Base) Redirect(redirectURL string) (string, error) {
 	if redirectURL != "" {
 		base.WithRedirectURL(redirectURL)
 	}
@@ -76,9 +76,12 @@ func (base *Base) Redirect(redirectURL string) string {
 	return base.GetAuthURL()
 }
 
-func (base *Base) UserFromCode(code string, isExternal bool) *src.User {
+func (base *Base) UserFromCode(code string, isExternal bool) (*src.User, error) {
 	tokenResponse := base.tokenFromCode(code)
-	user := base.UserFromToken((*tokenResponse)[base.accessTokenKey].(string))
+	user, err := base.UserFromToken((*tokenResponse)[base.accessTokenKey].(string))
+	if err != nil {
+		return nil, err
+	}
 
 	refreshTokenKey := ""
 	if (*tokenResponse)[base.refreshTokenKey] != nil {
@@ -92,16 +95,19 @@ func (base *Base) UserFromCode(code string, isExternal bool) *src.User {
 
 	return user.SetRefreshToken(refreshTokenKey).
 		SetExpiresIn(expiresInKey).
-		SetTokenResponse(tokenResponse)
+		SetTokenResponse(tokenResponse), nil
 }
 
-func (base *Base) UserFromToken(token string) *src.User {
-	user := base.GetUserByToken(token)
+func (base *Base) UserFromToken(token string) (*src.User, error) {
+	user, err := base.GetUserByToken(token)
+	if err != nil {
+		return nil, err
+	}
 
 	return base.MapUserToObject(user).
 		SetProvider(base).
 		SetRaw(user).
-		SetAccessToken(token)
+		SetAccessToken(token), nil
 }
 
 func (base *Base) tokenFromCode(code string) *object.HashMap {
@@ -123,9 +129,8 @@ func (base *Base) tokenFromCode(code string) *object.HashMap {
 	return base.normalizeAccessTokenResponse(response)
 }
 
-func (base *Base) refreshToken(refreshToken string) {
-	defer exceptions.NewMethodDoesNotSupportException().HandleException(nil, "base.refresh.token", nil)
-	panic("refreshToken does not support.")
+func (base *Base) refreshToken(refreshToken string) error {
+	return errors.New("refreshToken does not support")
 
 }
 

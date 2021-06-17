@@ -5,6 +5,9 @@ import (
 	"github.com/golang-module/carbon"
 )
 
+// https://open.work.weixin.qq.com/api/doc/90000/90135/92114
+
+
 type ExternalContact struct {
 	ExternalUserID   string           `json:"external_userid"` // woAJ2GCAAAXtWyujaWJHDDGi0mACHAAA",
 	Name             string           `json:"name"`            // 李四",
