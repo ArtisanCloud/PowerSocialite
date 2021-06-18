@@ -11,6 +11,6 @@ func main() {
 
 	fmt.Printf("hello Socialite! \n")
 	provider:=providers.NewWeCom(&object.HashMap{})
-	fmt2.Dump(provider)
+	fmt2.Dump(provider.GetConfig())
 
 }
