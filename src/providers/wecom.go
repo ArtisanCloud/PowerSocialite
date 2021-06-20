@@ -96,7 +96,7 @@ func (provider *WeCom) getOAuthURL() string {
 		"scope":         provider.formatScopes(provider.scopes, provider.scopeSeparator),
 		"state":         provider.state,
 	}
-	strQueries := object.ConvertStringMapToString(queries)
+	strQueries := object.ConvertStringMapToString(queries,"&")
 	strQueries = "https://open.weixin.qq.com/connect/oauth2/authorize?" + strQueries + "#wechat_redirect"
 	return strQueries
 }
@@ -116,7 +116,7 @@ func (provider *WeCom) GetQrConnectURL() (string, error) {
 		"redirect_uri": provider.redirectURL,
 		"state":        provider.state,
 	}
-	strQueries := object.ConvertStringMapToString(queries)
+	strQueries := object.ConvertStringMapToString(queries,"&")
 	strQueries = "https://open.work.weixin.qq.com/wwopen/sso/qrConnect?" + strQueries + "#wechat_redirect"
 	return strQueries, nil
 }
