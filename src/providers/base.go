@@ -119,7 +119,7 @@ func (base *Base) tokenFromCode(code string) *object.HashMap {
 		"POST",
 		&object.HashMap{
 			"form_params": base.GetTokenFields(code),
-			"headers": object.StringMap{
+			"headers": &object.StringMap{
 				"Accept": "application/json",
 			},
 		},

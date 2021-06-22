@@ -138,7 +138,7 @@ func (provider *WeCom) GetUserID(token string, code string) (*weCom.ResponseGetU
 		"https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo",
 		"GET",
 		&object.HashMap{
-			"query": object.StringMap{
+			"query": &object.StringMap{
 				"access_token": token,
 				"code":         code,
 			},
@@ -168,7 +168,7 @@ func (provider *WeCom) GetUserByID(userID string) (*weCom.ResponseGetUserByID, e
 		"https://qyapi.weixin.qq.com/cgi-bin/user/get",
 		"POST",
 		&object.HashMap{
-			"query": object.StringMap{
+			"query": &object.StringMap{
 				"access_token": strAPIAccessToken,
 				"userid":       userID,
 			},
@@ -207,7 +207,7 @@ func (provider *WeCom) createApiAccessToken() (string, error) {
 		"https://qyapi.weixin.qq.com/cgi-bin/gettoken",
 		"GET",
 		&object.HashMap{
-			"query": object.StringMap{
+			"query": &object.StringMap{
 				"corpid":     corpID,
 				"corpsecret": corpSecret,
 			},
