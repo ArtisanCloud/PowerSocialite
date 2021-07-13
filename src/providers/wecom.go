@@ -143,6 +143,7 @@ func (provider *WeCom) GetUserID(token string, code string) (*weCom.ResponseGetU
 				"code":         code,
 			},
 		},
+		false,nil,
 		outResponse,
 	)
 	if outResponse.ErrCode > 0 || (outResponse.UserID == "" && outResponse.DeviceID == "" && outResponse.OpenID == "") {
@@ -173,6 +174,7 @@ func (provider *WeCom) GetUserByID(userID string) (*weCom.ResponseGetUserByID, e
 				"userid":       userID,
 			},
 		},
+		false,nil,
 		outResponse,
 	)
 	if outResponse.ErrCode > 0 || outResponse.UserID == "" {
@@ -212,6 +214,7 @@ func (provider *WeCom) createApiAccessToken() (string, error) {
 				"corpsecret": corpSecret,
 			},
 		},
+		false,nil,
 		outResponse,
 	)
 	if outResponse.ErrCode > 0 {

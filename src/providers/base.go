@@ -2,8 +2,8 @@ package providers
 
 import (
 	"errors"
-	"github.com/ArtisanCloud/go-libs/http"
 	contract2 "github.com/ArtisanCloud/go-libs/http/contract"
+	"github.com/ArtisanCloud/go-libs/http/request"
 	"github.com/ArtisanCloud/go-libs/object"
 	"github.com/ArtisanCloud/go-socialite/src"
 	"github.com/ArtisanCloud/go-socialite/src/response/weCom"
@@ -19,7 +19,7 @@ type Base struct {
 	parameters      *object.HashMap
 	scopes          []string
 	scopeSeparator  string
-	httpClient      *http.HttpRequest
+	httpClient      *request.HttpRequest
 	guzzleOptions   *object.HashMap
 	encodingType    int
 	expiresInKey    string
@@ -123,6 +123,7 @@ func (base *Base) tokenFromCode(code string) *object.HashMap {
 				"Accept": "application/json",
 			},
 		},
+		false, nil,
 		outResponse,
 	)
 
@@ -184,11 +185,11 @@ func (base *Base) GetClientSecret() string {
 	return result
 }
 
-func (base *Base) GetHttpClient() *http.HttpRequest {
+func (base *Base) GetHttpClient() *request.HttpRequest {
 	if base.httpClient != nil {
 		return base.httpClient
 	} else {
-		return http.NewHttpRequest(base.config.All())
+		return request.NewHttpRequest(base.config.All())
 	}
 
 }
