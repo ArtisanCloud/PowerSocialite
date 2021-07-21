@@ -77,7 +77,11 @@ func (base *Base) Redirect(redirectURL string) (string, error) {
 }
 
 func (base *Base) UserFromCode(code string, isExternal bool) (*src.User, error) {
-	tokenResponse := base.tokenFromCode(code)
+	tokenResponse, err := base.tokenFromCode(code)
+	if err != nil {
+		return nil, err
+	}
+
 	user, err := base.UserFromToken((*tokenResponse)[base.accessTokenKey].(string))
 	if err != nil {
 		return nil, err
@@ -110,11 +114,11 @@ func (base *Base) UserFromToken(token string) (*src.User, error) {
 		SetAccessToken(token), nil
 }
 
-func (base *Base) tokenFromCode(code string) *object.HashMap {
+func (base *Base) tokenFromCode(code string) (*object.HashMap, error) {
 
 	outResponse := &weCom.ResponseTokenFromCode{}
 
-	response := base.GetHttpClient().PerformRequest(
+	response, err := base.GetHttpClient().PerformRequest(
 		base.GetTokenURL(),
 		"POST",
 		&object.HashMap{
@@ -127,7 +131,7 @@ func (base *Base) tokenFromCode(code string) *object.HashMap {
 		outResponse,
 	)
 
-	return base.normalizeAccessTokenResponse(response)
+	return base.normalizeAccessTokenResponse(response), err
 }
 
 func (base *Base) refreshToken(refreshToken string) error {
