@@ -110,7 +110,7 @@ func (base *Base) UserFromToken(token string) (*src.User, error) {
 
 	return base.MapUserToObject(user).
 		SetProvider(base).
-		SetRaw(user).
+		SetRaw(*user).
 		SetAccessToken(token), nil
 }
 

@@ -72,7 +72,7 @@ func (provider *WeCom) UserFromCode(code string, isExternal bool) (*src.User, er
 		user = provider.MapUserToObject(userInfo)
 	}
 
-	return user.SetProvider(provider).SetRaw(user.GetAttributes()), nil
+	return user.SetProvider(provider).SetRaw(*user.GetAttributes()), nil
 }
 
 func (provider *WeCom) Detailed() *WeCom {

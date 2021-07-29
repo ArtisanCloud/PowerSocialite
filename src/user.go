@@ -91,7 +91,7 @@ func (user *User) GetExpiresIn() int {
 	return user.GetAttribute("expires_in", 0).(int)
 }
 
-func (user *User) SetRaw(u *object.HashMap) *User {
+func (user *User) SetRaw(u object.HashMap) *User {
 	user.SetAttribute("raw", u)
 
 	return user
