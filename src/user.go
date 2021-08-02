@@ -29,24 +29,24 @@ func (user *User) GetID() string {
 }
 
 func (user *User) GetOpenID() string {
-	if user.Attributes["OpenId"] != nil {
-		return user.Attributes["OpenId"].(string)
+	if user.Attributes["openID"] != nil {
+		return user.Attributes["openID"].(string)
 	} else {
 		return ""
 	}
 }
 
 func (user *User) GetExternalUserID() string {
-	if user.Attributes["external_userid"] != nil {
-		return user.Attributes["external_userid"].(string)
+	if user.Attributes["externalUserID"] != nil {
+		return user.Attributes["externalUserID"].(string)
 	} else {
 		return ""
 	}
 }
 
 func (user *User) GetDeviceID() string {
-	if user.Attributes["DeviceId"] != nil {
-		return user.Attributes["DeviceId"].(string)
+	if user.Attributes["deviceID"] != nil {
+		return user.Attributes["deviceID"].(string)
 	} else {
 		return ""
 	}

@@ -7,6 +7,7 @@ import (
 	"github.com/ArtisanCloud/go-socialite/src"
 	"github.com/ArtisanCloud/go-socialite/src/exceptions"
 	"github.com/ArtisanCloud/go-socialite/src/response/weCom"
+	"github.com/ArtisanCloud/power-wechat/src/work/externalContact/response"
 )
 
 const NAME = "wecom"
@@ -39,8 +40,8 @@ func (provider *WeCom) SetAgentID(agentId int) *WeCom {
 }
 
 func (provider *WeCom) UserFromCode(code string) (*src.User, error) {
-	token,err := provider.GetAPIAccessToken()
-	if err!=nil{
+	token, err := provider.GetAPIAccessToken()
+	if err != nil {
 		return nil, err
 	}
 
@@ -51,16 +52,26 @@ func (provider *WeCom) UserFromCode(code string) (*src.User, error) {
 	var (
 		user       *src.User
 		userDetail *weCom.ResponseGetUserByID
+		userID     string = userInfo.UserID
 	)
-	if provider.detailed {
-		// employee
-		userDetail, err = provider.GetUserByID(userInfo.UserID)
-		if err != nil {
-			return nil, err
+
+	// user is contact
+	if userID == "" {
+		userID = userInfo.ExternalUserID
+		user = provider.MapUserToContact(userInfo)
+
+	} else
+	// user is employee
+	{
+		if provider.detailed {
+			userDetail, err = provider.GetUserByID(userInfo.UserID)
+			if err != nil {
+				return nil, err
+			}
+			user = provider.MapUserToObject(userDetail)
+		} else {
+			user = provider.MapUserToObject(userInfo)
 		}
-		user = provider.MapUserToObject(userDetail)
-	} else {
-		user = provider.MapUserToObject(userInfo)
 	}
 
 	return user.SetProvider(provider).SetRaw(*user.GetAttributes()), nil
@@ -87,7 +98,7 @@ func (provider *WeCom) getOAuthURL() string {
 		"scope":         provider.formatScopes(provider.scopes, provider.scopeSeparator),
 		"state":         provider.state,
 	}
-	strQueries := object.ConvertStringMapToString(queries,"&")
+	strQueries := object.ConvertStringMapToString(queries, "&")
 	strQueries = "https://open.weixin.qq.com/connect/oauth2/authorize?" + strQueries + "#wechat_redirect"
 	return strQueries
 }
@@ -107,7 +118,7 @@ func (provider *WeCom) GetQrConnectURL() (string, error) {
 		"redirect_uri": provider.redirectURL,
 		"state":        provider.state,
 	}
-	strQueries := object.ConvertStringMapToString(queries,"&")
+	strQueries := object.ConvertStringMapToString(queries, "&")
 	strQueries = "https://open.work.weixin.qq.com/wwopen/sso/qrConnect?" + strQueries + "#wechat_redirect"
 	return strQueries, nil
 }
@@ -134,7 +145,7 @@ func (provider *WeCom) GetUserID(token string, code string) (*weCom.ResponseGetU
 				"code":         code,
 			},
 		},
-		false,nil,
+		false, nil,
 		outResponse,
 	)
 	if outResponse.ErrCode > 0 || (outResponse.UserID == "" && outResponse.DeviceID == "" && outResponse.OpenID == "") {
@@ -153,7 +164,7 @@ func (provider *WeCom) GetUserByID(userID string) (*weCom.ResponseGetUserByID, e
 
 	outResponse := &weCom.ResponseGetUserByID{}
 	strAPIAccessToken, err := provider.GetAPIAccessToken()
-	if err!=nil{
+	if err != nil {
 		return nil, err
 	}
 	provider.GetHttpClient().PerformRequest(
@@ -165,7 +176,7 @@ func (provider *WeCom) GetUserByID(userID string) (*weCom.ResponseGetUserByID, e
 				"userid":       userID,
 			},
 		},
-		false,nil,
+		false, nil,
 		outResponse,
 	)
 	if outResponse.ErrCode > 0 || outResponse.UserID == "" {
@@ -205,7 +216,7 @@ func (provider *WeCom) createApiAccessToken() (string, error) {
 				"corpsecret": corpSecret,
 			},
 		},
-		false,nil,
+		false, nil,
 		outResponse,
 	)
 	if outResponse.ErrCode > 0 {
@@ -250,7 +261,7 @@ func (provider *WeCom) OverrideGetTokenURL() {
 	}
 }
 func (provider *WeCom) OverrideGetUserByToken() {
-	provider.GetUserByToken = func(token string) (*object.HashMap ,error){
+	provider.GetUserByToken = func(token string) (*object.HashMap, error) {
 
 		return nil, errors.New("WeCom doesn't support access_token mode")
 	}
@@ -305,27 +316,28 @@ func (provider *WeCom) MapUserToEmployee(userData interface{}) *src.User {
 func (provider *WeCom) MapUserToContact(userData interface{}) *src.User {
 
 	if provider.detailed {
-		userByID := userData.(*weCom.ResponseGetExternalContact)
+		userByID := userData.(*response.ResponseGetExternalContact)
 		return src.NewUser(&object.HashMap{
-			"externalUserID":   userByID.ExternalUserID,
-			"name":             userByID.Name,
-			"position":         userByID.Position,
-			"avatar":           userByID.Avatar,
-			"corpName":         userByID.CorpName,
-			"corpFullName":     userByID.CorpFullName,
-			"type":             userByID.Type,
-			"gender":           userByID.Gender,
-			"unionID":          userByID.UnionID,
-			"externalProfiles": userByID.ExternalProfiles,
-			"followUsers":      userByID.FollowUsers,
+			"externalUserID":   userByID.ExternalContact.ExternalUserID,
+			"name":             userByID.ExternalContact.Name,
+			"position":         userByID.ExternalContact.Position,
+			"avatar":           userByID.ExternalContact.Avatar,
+			"corpName":         userByID.ExternalContact.CorpName,
+			"corpFullName":     userByID.ExternalContact.CorpFullName,
+			"type":             userByID.ExternalContact.Type,
+			"gender":           userByID.ExternalContact.Gender,
+			"unionID":          userByID.ExternalContact.UnionID,
+			"externalProfiles": userByID.ExternalContact.ExternalProfile,
+			"followUsers":      userByID.FollowInfo,
 		}, provider)
 	}
 
-	userInfo := userData.(*weCom.ResponseGetUserInfo)
+	userInfo := userData.(*response.ResponseGetExternalContact)
 	return src.NewUser(&object.HashMap{
-		"userID":   userInfo.UserID,
-		"deviceID": userInfo.DeviceID,
-		"openID":   userInfo.OpenID,
+		//"userID":         userInfo.ExternalContact.UserID,
+		//"deviceID":       userInfo.ExternalContact.DeviceID,
+		//"openID":         userInfo.ExternalContact.OpenID,
+		"externalUserID": userInfo.ExternalContact.ExternalUserID,
 	}, provider)
 
 }
