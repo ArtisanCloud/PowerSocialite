@@ -76,7 +76,7 @@ func (base *Base) Redirect(redirectURL string) (string, error) {
 	return base.GetAuthURL()
 }
 
-func (base *Base) UserFromCode(code string, isExternal bool) (*src.User, error) {
+func (base *Base) UserFromCode(code string) (*src.User, error) {
 	tokenResponse, err := base.tokenFromCode(code)
 	if err != nil {
 		return nil, err

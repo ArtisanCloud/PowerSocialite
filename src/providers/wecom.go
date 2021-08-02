@@ -38,7 +38,7 @@ func (provider *WeCom) SetAgentID(agentId int) *WeCom {
 	return provider
 }
 
-func (provider *WeCom) UserFromCode(code string, isExternal bool) (*src.User, error) {
+func (provider *WeCom) UserFromCode(code string) (*src.User, error) {
 	token,err := provider.GetAPIAccessToken()
 	if err!=nil{
 		return nil, err
@@ -53,19 +53,10 @@ func (provider *WeCom) UserFromCode(code string, isExternal bool) (*src.User, er
 		userDetail *weCom.ResponseGetUserByID
 	)
 	if provider.detailed {
-		if isExternal {
-			// contact
-			userDetail, err = provider.GetUserByID(userInfo.UserID)
-			//userDetail = provider.GetContactByID(userInfo.UserID)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			// employee
-			userDetail, err = provider.GetUserByID(userInfo.UserID)
-			if err != nil {
-				return nil, err
-			}
+		// employee
+		userDetail, err = provider.GetUserByID(userInfo.UserID)
+		if err != nil {
+			return nil, err
 		}
 		user = provider.MapUserToObject(userDetail)
 	} else {

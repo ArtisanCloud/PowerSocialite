@@ -28,6 +28,30 @@ func (user *User) GetID() string {
 	}
 }
 
+func (user *User) GetOpenID() string {
+	if user.Attributes["OpenId"] != nil {
+		return user.Attributes["OpenId"].(string)
+	} else {
+		return ""
+	}
+}
+
+func (user *User) GetExternalUserID() string {
+	if user.Attributes["external_userid"] != nil {
+		return user.Attributes["external_userid"].(string)
+	} else {
+		return ""
+	}
+}
+
+func (user *User) GetDeviceID() string {
+	if user.Attributes["DeviceId"] != nil {
+		return user.Attributes["DeviceId"].(string)
+	} else {
+		return ""
+	}
+}
+
 func (user *User) GetNickname() string {
 	if user.Attributes["nickname"] != nil {
 		return user.Attributes["id"].(string)
