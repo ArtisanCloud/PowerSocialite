@@ -7,7 +7,6 @@ import (
 	"github.com/ArtisanCloud/go-socialite/src"
 	"github.com/ArtisanCloud/go-socialite/src/exceptions"
 	"github.com/ArtisanCloud/go-socialite/src/response/weCom"
-	"github.com/ArtisanCloud/power-wechat/src/work/externalContact/response"
 )
 
 const NAME = "wecom"
@@ -52,26 +51,44 @@ func (provider *WeCom) UserFromCode(code string) (*src.User, error) {
 	var (
 		user       *src.User
 		userDetail *weCom.ResponseGetUserByID
-		userID     string = userInfo.UserID
 	)
 
-	// user is contact
-	if userID == "" {
-		userID = userInfo.ExternalUserID
-		user = provider.MapUserToContact(userInfo)
-
-	} else
-	// user is employee
-	{
-		if provider.detailed {
-			userDetail, err = provider.GetUserByID(userInfo.UserID)
-			if err != nil {
-				return nil, err
-			}
-			user = provider.MapUserToObject(userDetail)
-		} else {
-			user = provider.MapUserToObject(userInfo)
+	if provider.detailed {
+		userDetail, err = provider.GetUserByID(userInfo.UserID)
+		if err != nil {
+			return nil, err
 		}
+		user = provider.MapUserToObject(userDetail)
+	} else {
+		user = provider.MapUserToObject(userInfo)
+	}
+
+	return user.SetProvider(provider).SetRaw(*user.GetAttributes()), nil
+}
+
+func (provider *WeCom) ContactFromCode(code string) (*src.User, error) {
+	token, err := provider.GetAPIAccessToken()
+	if err != nil {
+		return nil, err
+	}
+
+	userInfo, err := provider.GetUserID(token, code)
+	if err != nil {
+		return nil, err
+	}
+	var (
+		user       *src.User
+		userDetail *weCom.ResponseGetUserByID
+	)
+
+	if provider.detailed {
+		userDetail, err = provider.GetUserByID(userInfo.UserID)
+		if err != nil {
+			return nil, err
+		}
+		user = provider.Detailed().MapUserToContact(userDetail)
+	} else {
+		user = provider.MapUserToContact(userInfo)
 	}
 
 	return user.SetProvider(provider).SetRaw(*user.GetAttributes()), nil
@@ -272,34 +289,12 @@ func (provider *WeCom) OverrideMapUserToObject() {
 	provider.MapUserToObject = func(userData interface{}) *src.User {
 
 		if provider.detailed {
-			userByID := userData.(*weCom.ResponseGetUserByID)
-			return src.NewUser(&object.HashMap{
-				"alias":           userByID.Alias,
-				"avatar":          userByID.Avatar,
-				"department":      userByID.Department,
-				"email":           userByID.Email,
-				"enable":          userByID.Enable,
-				"englishName":     userByID.EnglishName,
-				"extAttr":         userByID.ExtAttr,
-				"externalProfile": userByID.ExternalProfile,
-				"gender":          userByID.Gender,
-				"hideMobile":      userByID.HideMobile,
-				"isLeaderInDept":  userByID.IsLeaderInDept,
-				"isLeader":        userByID.IsLeader,
-				"mainDepartment":  userByID.MainDepartment,
-				"mobile":          userByID.Mobile,
-				"name":            userByID.Name,
-				"order":           userByID.Order,
-				"position":        userByID.Position,
-				"qrCode":          userByID.QrCode,
-				"status":          userByID.Status,
-				"telephone":       userByID.Telephone,
-				"thumbAvatar":     userByID.ThumbAvatar,
-				"userID":          userByID.UserID,
-				"weiXinID":        userByID.WeiXinID,
-			}, provider)
+			// weCom.ResponseGetUserByID is detail response
+			MapUser, _ := object.StructToHashMap(userData)
+			return src.NewUser(MapUser, provider)
 		}
 
+		// weCom.ResponseGetUserInfo is response from code to user
 		userInfo := userData.(*weCom.ResponseGetUserInfo)
 		return src.NewUser(&object.HashMap{
 			"userID":   userInfo.UserID,
@@ -316,28 +311,16 @@ func (provider *WeCom) MapUserToEmployee(userData interface{}) *src.User {
 func (provider *WeCom) MapUserToContact(userData interface{}) *src.User {
 
 	if provider.detailed {
-		userByID := userData.(*response.ResponseGetExternalContact)
-		return src.NewUser(&object.HashMap{
-			"externalUserID":   userByID.ExternalContact.ExternalUserID,
-			"name":             userByID.ExternalContact.Name,
-			"position":         userByID.ExternalContact.Position,
-			"avatar":           userByID.ExternalContact.Avatar,
-			"corpName":         userByID.ExternalContact.CorpName,
-			"corpFullName":     userByID.ExternalContact.CorpFullName,
-			"type":             userByID.ExternalContact.Type,
-			"gender":           userByID.ExternalContact.Gender,
-			"unionID":          userByID.ExternalContact.UnionID,
-			"externalProfiles": userByID.ExternalContact.ExternalProfile,
-			"followUsers":      userByID.FollowInfo,
-		}, provider)
+		MapUser, _ := object.StructToHashMap(userData)
+		return src.NewUser(MapUser, provider)
 	}
 
-	userInfo := userData.(*response.ResponseGetExternalContact)
+	userInfo := userData.(*weCom.ResponseGetUserInfo)
 	return src.NewUser(&object.HashMap{
-		//"userID":         userInfo.ExternalContact.UserID,
-		//"deviceID":       userInfo.ExternalContact.DeviceID,
-		//"openID":         userInfo.ExternalContact.OpenID,
-		"externalUserID": userInfo.ExternalContact.ExternalUserID,
+		"userID":         userInfo.UserID,
+		"deviceID":       userInfo.DeviceID,
+		"openID":         userInfo.OpenID,
+		"externalUserID": userInfo.ExternalUserID,
 	}, provider)
 
 }
