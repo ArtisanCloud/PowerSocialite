@@ -26,4 +26,6 @@ type Employee struct {
 	ThumbAvatar     string          `json:"thumb_avatar"`
 	UserID          string          `json:"userid"`
 	OpenUserID      string          `json:"open_userid"`
+	OpenID          string          `json:"-"`
+	CorpID          string          `json:"-"`
 }
