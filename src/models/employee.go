@@ -25,5 +25,5 @@ type Employee struct {
 	Telephone       string          `json:"telephone"`
 	ThumbAvatar     string          `json:"thumb_avatar"`
 	UserID          string          `json:"userid"`
-	WeiXinID        string          `json:"weixinid"`
+	OpenUserID      string          `json:"open_userid"`
 }
