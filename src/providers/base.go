@@ -231,7 +231,7 @@ func (base *Base) GetCodeFields() *object.HashMap {
 	return fields
 }
 
-func (base *Base) normalizeAccessTokenResponse(response contract2.ResponseContract) *object.HashMap {
+func (base *Base) normalizeAccessTokenResponse(response contract2.ResponseInterface) *object.HashMap {
 	// tbd
 
 	return nil
