@@ -123,7 +123,7 @@ func (provider *WeCom) getOAuthURL() string {
 func (provider *WeCom) GetQrConnectURL() (string, error) {
 	strAgentID := provider.agentId
 	if strAgentID == 0 {
-		strAgentID = provider.config.Get("agentid", 0).(int)
+		strAgentID = provider.config.Get("agent_id", 0).(int)
 		if strAgentID == 0 {
 			return "", errors.New(fmt.Sprintf("You must config the `agentid` in configuration or using `setAgentid(%d)`.", strAgentID))
 		}
