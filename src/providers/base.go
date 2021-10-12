@@ -60,9 +60,9 @@ func NewBase(config *object.HashMap) *Base {
 	}
 
 	// normalize 'redirect_url'
-	if base.config.Has("redirect_url") {
+	if base.config.Has("redirect") {
 		redirectURL := base.config.Get("redirect", "").(string)
-		base.config.Set("redirect_url", redirectURL)
+		base.config.Set("redirect", redirectURL)
 	}
 
 	return base
