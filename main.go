@@ -4,7 +4,7 @@ import (
 	"fmt"
 	fmt2 "github.com/ArtisanCloud/go-libs/fmt"
 	"github.com/ArtisanCloud/go-libs/object"
-	"github.com/ArtisanCloud/go-socialite/src/providers"
+	"github.com/ArtisanCloud/PowerSocialite/src/providers"
 )
 
 func main() {

@@ -3,7 +3,7 @@ package src
 import (
 	"encoding/json"
 	"github.com/ArtisanCloud/go-libs/object"
-	"github.com/ArtisanCloud/go-socialite/src/contracts"
+	"github.com/ArtisanCloud/PowerSocialite/src/contracts"
 )
 
 type User struct {

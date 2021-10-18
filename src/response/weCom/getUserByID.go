@@ -1,6 +1,6 @@
 package weCom
 
-import "github.com/ArtisanCloud/go-socialite/src/models"
+import "github.com/ArtisanCloud/PowerSocialite/src/models"
 
 type ResponseGetUserByID struct {
 	*ResponseWeCom
