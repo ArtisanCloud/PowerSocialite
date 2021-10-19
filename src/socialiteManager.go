@@ -1,6 +1,6 @@
 package src
 
-import "github.com/ArtisanCloud/go-libs/object"
+import "github.com/ArtisanCloud/PowerLibs/object"
 
 type SocialiteManager struct {
 	Config         *Config

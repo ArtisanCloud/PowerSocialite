@@ -2,9 +2,9 @@ package providers
 
 import (
 	"errors"
-	contract2 "github.com/ArtisanCloud/go-libs/http/contract"
-	"github.com/ArtisanCloud/go-libs/http/request"
-	"github.com/ArtisanCloud/go-libs/object"
+	contract2 "github.com/ArtisanCloud/PowerLibs/http/contract"
+	"github.com/ArtisanCloud/PowerLibs/http/request"
+	"github.com/ArtisanCloud/PowerLibs/object"
 	"github.com/ArtisanCloud/PowerSocialite/src"
 	"github.com/ArtisanCloud/PowerSocialite/src/response/weCom"
 	"strings"

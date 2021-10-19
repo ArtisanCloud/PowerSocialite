@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/ArtisanCloud/go-libs/object"
+	"github.com/ArtisanCloud/PowerLibs/object"
 )
 
 // https://open.work.weixin.qq.com/api/doc/90000/90135/92114
