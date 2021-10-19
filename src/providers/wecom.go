@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ArtisanCloud/go-libs/object"
-	"github.com/ArtisanCloud/go-socialite/src"
-	"github.com/ArtisanCloud/go-socialite/src/exceptions"
-	"github.com/ArtisanCloud/go-socialite/src/response/weCom"
+	"github.com/ArtisanCloud/PowerSocialite/src"
+	"github.com/ArtisanCloud/PowerSocialite/src/exceptions"
+	"github.com/ArtisanCloud/PowerSocialite/src/response/weCom"
 )
 
 const NAME = "wecom"

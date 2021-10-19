@@ -5,8 +5,8 @@ import (
 	contract2 "github.com/ArtisanCloud/go-libs/http/contract"
 	"github.com/ArtisanCloud/go-libs/http/request"
 	"github.com/ArtisanCloud/go-libs/object"
-	"github.com/ArtisanCloud/go-socialite/src"
-	"github.com/ArtisanCloud/go-socialite/src/response/weCom"
+	"github.com/ArtisanCloud/PowerSocialite/src"
+	"github.com/ArtisanCloud/PowerSocialite/src/response/weCom"
 	"strings"
 )
 
