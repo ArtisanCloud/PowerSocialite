@@ -1,8 +1,9 @@
 package weCom
 
 type ResponseGetUserInfo struct {
-	UserID   string `json:"UserId"`
-	DeviceID string `json:"DeviceId"`
-	OpenID   string `json:"OpenId"`
 	*ResponseWeCom
+	DeviceID       string `json:"DeviceId"`
+	UserID         string `json:"UserId"`
+	ExternalUserID string `json:"external_userid"`
+	OpenID         string `json:"OpenId"`
 }

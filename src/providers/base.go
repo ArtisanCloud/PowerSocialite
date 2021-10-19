@@ -1,12 +1,12 @@
 package providers
 
 import (
-	"github.com/ArtisanCloud/go-libs/http"
-	contract2 "github.com/ArtisanCloud/go-libs/http/contract"
-	"github.com/ArtisanCloud/go-libs/object"
-	"github.com/ArtisanCloud/go-socialite/src"
-	"github.com/ArtisanCloud/go-socialite/src/exceptions"
-	"github.com/ArtisanCloud/go-socialite/src/response/weCom"
+	"errors"
+	contract2 "github.com/ArtisanCloud/PowerLibs/http/contract"
+	"github.com/ArtisanCloud/PowerLibs/http/request"
+	"github.com/ArtisanCloud/PowerLibs/object"
+	"github.com/ArtisanCloud/PowerSocialite/src"
+	"github.com/ArtisanCloud/PowerSocialite/src/response/weCom"
 	"strings"
 )
 
@@ -19,16 +19,16 @@ type Base struct {
 	parameters      *object.HashMap
 	scopes          []string
 	scopeSeparator  string
-	httpClient      *http.HttpRequest
+	httpClient      *request.HttpRequest
 	guzzleOptions   *object.HashMap
 	encodingType    int
 	expiresInKey    string
 	accessTokenKey  string
 	refreshTokenKey string
 
-	GetAuthURL      func() string
+	GetAuthURL      func() (string, error)
 	GetTokenURL     func() string
-	GetUserByToken  func(token string) *object.HashMap
+	GetUserByToken  func(token string) (*object.HashMap, error)
 	MapUserToObject func(userData interface{}) *src.User
 }
 
@@ -60,15 +60,15 @@ func NewBase(config *object.HashMap) *Base {
 	}
 
 	// normalize 'redirect_url'
-	if base.config.Has("redirect_url") {
+	if base.config.Has("redirect") {
 		redirectURL := base.config.Get("redirect", "").(string)
-		base.config.Set("redirect_url", redirectURL)
+		base.config.Set("redirect", redirectURL)
 	}
 
 	return base
 }
 
-func (base *Base) Redirect(redirectURL string) string {
+func (base *Base) Redirect(redirectURL string) (string, error) {
 	if redirectURL != "" {
 		base.WithRedirectURL(redirectURL)
 	}
@@ -76,9 +76,16 @@ func (base *Base) Redirect(redirectURL string) string {
 	return base.GetAuthURL()
 }
 
-func (base *Base) UserFromCode(code string, isExternal bool) *src.User {
-	tokenResponse := base.tokenFromCode(code)
-	user := base.UserFromToken((*tokenResponse)[base.accessTokenKey].(string))
+func (base *Base) UserFromCode(code string) (*src.User, error) {
+	tokenResponse, err := base.tokenFromCode(code)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := base.UserFromToken((*tokenResponse)[base.accessTokenKey].(string))
+	if err != nil {
+		return nil, err
+	}
 
 	refreshTokenKey := ""
 	if (*tokenResponse)[base.refreshTokenKey] != nil {
@@ -92,40 +99,43 @@ func (base *Base) UserFromCode(code string, isExternal bool) *src.User {
 
 	return user.SetRefreshToken(refreshTokenKey).
 		SetExpiresIn(expiresInKey).
-		SetTokenResponse(tokenResponse)
+		SetTokenResponse(tokenResponse), nil
 }
 
-func (base *Base) UserFromToken(token string) *src.User {
-	user := base.GetUserByToken(token)
+func (base *Base) UserFromToken(token string) (*src.User, error) {
+	user, err := base.GetUserByToken(token)
+	if err != nil {
+		return nil, err
+	}
 
 	return base.MapUserToObject(user).
 		SetProvider(base).
-		SetRaw(user).
-		SetAccessToken(token)
+		SetRaw(*user).
+		SetAccessToken(token), nil
 }
 
-func (base *Base) tokenFromCode(code string) *object.HashMap {
+func (base *Base) tokenFromCode(code string) (*object.HashMap, error) {
 
 	outResponse := &weCom.ResponseTokenFromCode{}
 
-	response := base.GetHttpClient().PerformRequest(
+	response, err := base.GetHttpClient().PerformRequest(
 		base.GetTokenURL(),
 		"POST",
 		&object.HashMap{
 			"form_params": base.GetTokenFields(code),
-			"headers": object.StringMap{
+			"headers": &object.StringMap{
 				"Accept": "application/json",
 			},
 		},
+		false, nil,
 		outResponse,
 	)
 
-	return base.normalizeAccessTokenResponse(response)
+	return base.normalizeAccessTokenResponse(response), err
 }
 
-func (base *Base) refreshToken(refreshToken string) {
-	defer exceptions.NewMethodDoesNotSupportException().HandleException(nil, "base.refresh.token", nil)
-	panic("refreshToken does not support.")
+func (base *Base) refreshToken(refreshToken string) error {
+	return errors.New("refreshToken does not support")
 
 }
 
@@ -179,11 +189,11 @@ func (base *Base) GetClientSecret() string {
 	return result
 }
 
-func (base *Base) GetHttpClient() *http.HttpRequest {
+func (base *Base) GetHttpClient() *request.HttpRequest {
 	if base.httpClient != nil {
 		return base.httpClient
 	} else {
-		return http.NewHttpRequest(base.config.All())
+		return request.NewHttpRequest(base.config.All())
 	}
 
 }
@@ -221,7 +231,7 @@ func (base *Base) GetCodeFields() *object.HashMap {
 	return fields
 }
 
-func (base *Base) normalizeAccessTokenResponse(response contract2.ResponseContract) *object.HashMap {
+func (base *Base) normalizeAccessTokenResponse(response contract2.ResponseInterface) *object.HashMap {
 	// tbd
 
 	return nil

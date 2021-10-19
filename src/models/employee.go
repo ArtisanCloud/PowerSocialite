@@ -1,6 +1,6 @@
 package models
 
-import "github.com/ArtisanCloud/go-libs/object"
+import "github.com/ArtisanCloud/PowerLibs/object"
 
 type Employee struct {
 	Alias           string          `json:"alias"`
@@ -15,7 +15,7 @@ type Employee struct {
 	HideMobile      int             `json:"hide_mobile"`
 	IsLeaderInDept  []int           `json:"is_leader_in_dept"`
 	IsLeader        int             `json:"isleader"`
-	MainDepartment  int          `json:"main_department"`
+	MainDepartment  int             `json:"main_department"`
 	Mobile          string          `json:"mobile"`
 	Name            string          `json:"name"`
 	Order           []int           `json:"order"`
@@ -25,5 +25,7 @@ type Employee struct {
 	Telephone       string          `json:"telephone"`
 	ThumbAvatar     string          `json:"thumb_avatar"`
 	UserID          string          `json:"userid"`
-	WeiXinID        string          `json:"weixinid"`
+	OpenUserID      string          `json:"open_userid"`
+	OpenID          string          `json:"-"`
+	CorpID          string          `json:"-"`
 }

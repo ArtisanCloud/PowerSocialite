@@ -2,8 +2,8 @@ package src
 
 import (
 	"encoding/json"
-	"github.com/ArtisanCloud/go-libs/object"
-	"github.com/ArtisanCloud/go-socialite/src/contracts"
+	"github.com/ArtisanCloud/PowerLibs/object"
+	"github.com/ArtisanCloud/PowerSocialite/src/contracts"
 )
 
 type User struct {
@@ -25,6 +25,30 @@ func (user *User) GetID() string {
 		return user.Attributes["userID"].(string)
 	} else {
 		return user.GetEmail()
+	}
+}
+
+func (user *User) GetOpenID() string {
+	if user.Attributes["openID"] != nil {
+		return user.Attributes["openID"].(string)
+	} else {
+		return ""
+	}
+}
+
+func (user *User) GetExternalUserID() string {
+	if user.Attributes["externalUserID"] != nil {
+		return user.Attributes["externalUserID"].(string)
+	} else {
+		return ""
+	}
+}
+
+func (user *User) GetDeviceID() string {
+	if user.Attributes["deviceID"] != nil {
+		return user.Attributes["deviceID"].(string)
+	} else {
+		return ""
 	}
 }
 
@@ -91,7 +115,7 @@ func (user *User) GetExpiresIn() int {
 	return user.GetAttribute("expires_in", 0).(int)
 }
 
-func (user *User) SetRaw(u *object.HashMap) *User {
+func (user *User) SetRaw(u object.HashMap) *User {
 	user.SetAttribute("raw", u)
 
 	return user
