@@ -1,12 +1,16 @@
 package providers
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	contract2 "github.com/ArtisanCloud/PowerLibs/http/contract"
 	"github.com/ArtisanCloud/PowerLibs/http/request"
 	"github.com/ArtisanCloud/PowerLibs/object"
 	"github.com/ArtisanCloud/PowerSocialite/src"
+	"github.com/ArtisanCloud/PowerSocialite/src/contracts"
 	"github.com/ArtisanCloud/PowerSocialite/src/response/weCom"
+	"io"
 	"strings"
 )
 
@@ -16,7 +20,7 @@ type Base struct {
 	state           string
 	config          *src.Config
 	redirectURL     string
-	parameters      *object.HashMap
+	parameters      *object.StringMap
 	scopes          []string
 	scopeSeparator  string
 	httpClient      *request.HttpRequest
@@ -26,10 +30,13 @@ type Base struct {
 	accessTokenKey  string
 	refreshTokenKey string
 
-	GetAuthURL      func() (string, error)
-	GetTokenURL     func() string
-	GetUserByToken  func(token string) (*object.HashMap, error)
-	MapUserToObject func(userData interface{}) *src.User
+	GetAuthURL           func(state string) (string, error)
+	GetTokenURL          func(state string) string
+	GetUserByToken       func(token string) (*object.HashMap, error)
+	MapUserToObject      func(userData interface{}) *src.User
+	GetAccessToken       func(code string) (contracts.AccessTokenInterface, error)
+	BuildAuthURLFromBase func(url string, state string) string
+	GetCodeFields        func(state string) *object.StringMap
 }
 
 func NewBase(config *object.HashMap) *Base {
@@ -69,11 +76,17 @@ func NewBase(config *object.HashMap) *Base {
 }
 
 func (base *Base) Redirect(redirectURL string) (string, error) {
+	state := ""
+
 	if redirectURL != "" {
 		base.WithRedirectURL(redirectURL)
 	}
 
-	return base.GetAuthURL()
+	//if base.usesState(){
+	//	state=base.makeState()
+	//}
+
+	return base.GetAuthURL(state)
 }
 
 func (base *Base) UserFromCode(code string) (*src.User, error) {
@@ -119,7 +132,7 @@ func (base *Base) tokenFromCode(code string) (*object.HashMap, error) {
 	outResponse := &weCom.ResponseTokenFromCode{}
 
 	response, err := base.GetHttpClient().PerformRequest(
-		base.GetTokenURL(),
+		base.GetTokenURL(""),
 		"POST",
 		&object.HashMap{
 			"form_params": base.GetTokenFields(code),
@@ -157,7 +170,7 @@ func (base *Base) Scopes(scopes []string) *Base {
 	return base
 }
 
-func (base *Base) With(parameters *object.HashMap) *Base {
+func (base *Base) With(parameters *object.StringMap) *Base {
 	base.parameters = parameters
 
 	return base
@@ -165,6 +178,12 @@ func (base *Base) With(parameters *object.HashMap) *Base {
 
 func (base *Base) GetConfig() *src.Config {
 	return base.config
+}
+
+func (base *Base) buildAuthURLFromBase(url string, state string) string {
+	query := object.GetJoinedWithKSort(base.GetCodeFields(state))
+
+	return url + "?" + query + string(base.encodingType)
 }
 
 func (base *Base) WithScopeSeparator(scopeSeparator string) *Base {
@@ -211,19 +230,26 @@ func (base *Base) GetTokenFields(code string) *object.HashMap {
 	}
 }
 
-func (base *Base) buildAuthURLFromBase(url string) string {
-	// tbd
-	return ""
+func (base *Base) parseAccessToken(body io.ReadCloser) (accessToken contracts.AccessTokenInterface, err error) {
+	buf := new(bytes.Buffer)
+	_, _ = buf.ReadFrom(body)
+	jsonHashMap := object.HashMap{}
+	err = json.Unmarshal(buf.Bytes(), &jsonHashMap)
+
+	if err != nil {
+		return nil, err
+	}
+	return src.NewAccessToken(&jsonHashMap)
 }
 
-func (base *Base) GetCodeFields() *object.HashMap {
-	fields := &object.HashMap{
+func (base *Base) getCodeFields() *object.StringMap {
+	fields := &object.StringMap{
 		"client_id":     base.GetClientID(),
 		"redirect_uri":  base.redirectURL,
 		"scope":         base.formatScopes(base.scopes, base.scopeSeparator),
 		"response_type": "code",
 	}
-	fields = object.MergeHashMap(fields, base.parameters)
+	fields = object.MergeStringMap(fields, base.parameters)
 	if base.state != "" {
 		(*fields)["state"] = base.state
 	}

@@ -9,8 +9,6 @@ import (
 	"github.com/ArtisanCloud/PowerSocialite/src/response/weCom"
 )
 
-const NAME = "wecom"
-
 type WeCom struct {
 	*Base
 
@@ -107,20 +105,20 @@ func (provider *WeCom) WithApiAccessToken(apiAccessToken string) *WeCom {
 	return provider
 }
 
-func (provider *WeCom) getOAuthURL() string {
+func (provider *WeCom) getOAuthURL(state string) string {
 	queries := &object.StringMap{
 		"appid":         provider.GetClientID(),
 		"redirect_uri":  provider.redirectURL,
 		"response_type": "code",
 		"scope":         provider.formatScopes(provider.scopes, provider.scopeSeparator),
-		"state":         provider.state,
+		"state":         state,
 	}
 	strQueries := object.ConvertStringMapToString(queries, "&")
 	strQueries = "https://open.weixin.qq.com/connect/oauth2/authorize?" + strQueries + "#wechat_redirect"
 	return strQueries
 }
 
-func (provider *WeCom) GetQrConnectURL() (string, error) {
+func (provider *WeCom) GetQrConnectURL(state string) (string, error) {
 	strAgentID := provider.agentId
 	if strAgentID == 0 {
 		strAgentID = provider.config.Get("agent_id", 0).(int)
@@ -133,7 +131,7 @@ func (provider *WeCom) GetQrConnectURL() (string, error) {
 		"appid":        provider.GetClientID(),
 		"agentid":      fmt.Sprintf("%d", strAgentID),
 		"redirect_uri": provider.redirectURL,
-		"state":        provider.state,
+		"state":        state,
 	}
 	strQueries := object.ConvertStringMapToString(queries, "&")
 	strQueries = "https://open.work.weixin.qq.com/wwopen/sso/qrConnect?" + strQueries + "#wechat_redirect"
@@ -262,18 +260,18 @@ func (provider *WeCom) IdentifyUserAsContact(user *src.User) (openID string) {
 
 // Override GetCredentials
 func (provider *WeCom) OverrideGetAuthURL() {
-	provider.GetAuthURL = func() (string, error) {
+	provider.GetAuthURL = func(state string) (string, error) {
 		// 网页授权登录
 		if len(provider.scopes) > 0 {
-			return provider.getOAuthURL(), nil
+			return provider.getOAuthURL(state), nil
 		}
 
 		// 第三方网页应用登录（扫码登录）
-		return provider.GetQrConnectURL()
+		return provider.GetQrConnectURL(state)
 	}
 }
 func (provider *WeCom) OverrideGetTokenURL() {
-	provider.GetTokenURL = func() string {
+	provider.GetTokenURL = func(state string) string {
 		return ""
 	}
 }
