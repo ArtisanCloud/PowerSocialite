@@ -1,6 +1,6 @@
 package models
 
-import "github.com/ArtisanCloud/go-libs/object"
+import "github.com/ArtisanCloud/PowerLibs/object"
 
 type Employee struct {
 	Alias           string          `json:"alias"`

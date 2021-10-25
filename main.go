@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	fmt2 "github.com/ArtisanCloud/go-libs/fmt"
-	"github.com/ArtisanCloud/go-libs/object"
+	fmt2 "github.com/ArtisanCloud/PowerLibs/fmt"
+	"github.com/ArtisanCloud/PowerLibs/object"
 	"github.com/ArtisanCloud/PowerSocialite/src/providers"
 )
 

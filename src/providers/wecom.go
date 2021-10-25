@@ -3,7 +3,7 @@ package providers
 import (
 	"errors"
 	"fmt"
-	"github.com/ArtisanCloud/go-libs/object"
+	"github.com/ArtisanCloud/PowerLibs/object"
 	"github.com/ArtisanCloud/PowerSocialite/src"
 	"github.com/ArtisanCloud/PowerSocialite/src/exceptions"
 	"github.com/ArtisanCloud/PowerSocialite/src/response/weCom"
