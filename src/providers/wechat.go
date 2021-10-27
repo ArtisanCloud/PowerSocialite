@@ -34,6 +34,7 @@ func NewWeChat(config *object.HashMap) *WeChat {
 	wechat.OverrideGetAuthURL()
 	wechat.OverrideBuildAuthURLFromBase()
 	wechat.OverrideGetCodeFields()
+	wechat.OverrideGetTokenURL()
 
 	return wechat
 }
@@ -116,5 +117,14 @@ func (provider *WeChat) OverrideGetCodeFields() {
 		fields = object.MergeStringMap(fields, provider.parameters)
 
 		return fields
+	}
+}
+
+func (provider *WeChat) OverrideGetTokenURL() {
+	provider.GetTokenURL = func(state string) string {
+		if provider.component != nil {
+			return provider.baseURL + "/oauth2/component/access_token"
+		}
+		return provider.baseURL + "/oauth2/access_token"
 	}
 }

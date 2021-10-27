@@ -122,7 +122,8 @@ func (user *User) SetRaw(u object.HashMap) *User {
 }
 func (user *User) GetRaw() *object.HashMap {
 	if user.GetAttribute("raw", nil) != nil {
-		return user.GetAttribute("raw", nil).(*object.HashMap)
+		raw:=user.GetAttribute("raw", nil).(object.HashMap)
+		return &raw
 	}
 	return nil
 
