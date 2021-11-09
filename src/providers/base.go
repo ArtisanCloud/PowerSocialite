@@ -1,264 +1,281 @@
 package providers
 
 import (
-	"bytes"
-	"encoding/json"
-	"errors"
-	contract2 "github.com/ArtisanCloud/PowerLibs/http/contract"
-	"github.com/ArtisanCloud/PowerLibs/http/request"
-	"github.com/ArtisanCloud/PowerLibs/object"
-	"github.com/ArtisanCloud/PowerSocialite/src"
-	"github.com/ArtisanCloud/PowerSocialite/src/contracts"
-	"github.com/ArtisanCloud/PowerSocialite/src/response/weCom"
-	"io"
-	"strings"
+  "bytes"
+  "encoding/json"
+  "errors"
+  contract2 "github.com/ArtisanCloud/PowerLibs/http/contract"
+  "github.com/ArtisanCloud/PowerLibs/http/request"
+  "github.com/ArtisanCloud/PowerLibs/object"
+  "github.com/ArtisanCloud/PowerSocialite/src"
+  "github.com/ArtisanCloud/PowerSocialite/src/contracts"
+  "github.com/ArtisanCloud/PowerSocialite/src/response/weCom"
+  "io"
+  "strings"
 )
 
 type Base struct {
-	src.ProviderInterface
+  src.ProviderInterface
 
-	state           string
-	config          *src.Config
-	redirectURL     string
-	parameters      *object.StringMap
-	scopes          []string
-	scopeSeparator  string
-	httpClient      *request.HttpRequest
-	guzzleOptions   *object.HashMap
-	encodingType    int
-	expiresInKey    string
-	accessTokenKey  string
-	refreshTokenKey string
+  state           string
+  config          *src.Config
+  redirectURL     string
+  parameters      *object.StringMap
+  scopes          []string
+  scopeSeparator  string
+  httpClient      *request.HttpRequest
+  guzzleOptions   *object.HashMap
+  encodingType    int
+  expiresInKey    string
+  accessTokenKey  string
+  refreshTokenKey string
 
-	GetAuthURL           func(state string) (string, error)
-	GetTokenURL          func(state string) string
-	GetUserByToken       func(token string) (*object.HashMap, error)
-	MapUserToObject      func(userData interface{}) *src.User
-	GetAccessToken       func(code string) (contracts.AccessTokenInterface, error)
-	BuildAuthURLFromBase func(url string, state string) string
-	GetCodeFields        func(state string) *object.StringMap
+  GetAuthURL           func() (string, error)
+  GetTokenURL          func() string
+  GetUserByToken       func(token string) (*object.HashMap, error)
+  MapUserToObject      func(user *object.HashMap) *src.User
+  GetAccessToken       func(token string) (contracts.AccessTokenInterface, error)
+  BuildAuthURLFromBase func(url string, state string) string
+  GetCodeFields        func(state string) *object.StringMap
+  GetTokenFields       func(code string) *object.HashMap
 }
 
 func NewBase(config *object.HashMap) *Base {
 
-	base := &Base{
-		config: src.NewConfig(config),
-		scopes: []string{},
-	}
+  base := &Base{
+    config:          src.NewConfig(config),
+    scopes:          []string{},
+    expiresInKey:    "expires_in",
+    accessTokenKey:  "access_token",
+    refreshTokenKey: "refresh_token",
+  }
 
-	if (*config)["scopes"] != nil {
-		base.scopes = (*config)["scopes"].([]string)
-	}
+  // set scopes
+  if (*config)["scopes"] != nil {
+    base.scopes = (*config)["scopes"].([]string)
+  }
 
-	// normalize 'client_id'
-	if base.config.Has("client_id") {
-		id := base.config.Get("app_id", "").(string)
-		if id != "" {
-			base.config.Set("client_id", id)
-		}
-	}
+  // normalize 'client_id'
+  if base.config.Has("client_id") {
+    id := base.config.Get("app_id", "").(string)
+    if id != "" {
+      base.config.Set("client_id", id)
+    }
+  }
 
-	// normalize 'client_secret'
-	if base.config.Has("client_secret") {
-		secret := base.config.Get("app_secret", "").(string)
-		if secret != "" {
-			base.config.Set("client_secret", secret)
-		}
-	}
+  // normalize 'client_secret'
+  if base.config.Has("client_secret") {
+    secret := base.config.Get("app_secret", "").(string)
+    if secret != "" {
+      base.config.Set("client_secret", secret)
+    }
+  }
 
-	// normalize 'redirect_url'
-	if base.config.Has("redirect") {
-		redirectURL := base.config.Get("redirect", "").(string)
-		base.config.Set("redirect", redirectURL)
-	}
+  // normalize 'redirect_url'
+  if base.config.Has("redirect") {
+    redirectURL := base.config.Get("redirect", "").(string)
+    base.config.Set("redirect", redirectURL)
+  }
 
-	return base
+  return base
 }
 
 func (base *Base) Redirect(redirectURL string) (string, error) {
-	state := ""
+  if redirectURL != "" {
+    base.WithRedirectURL(redirectURL)
+  }
 
-	if redirectURL != "" {
-		base.WithRedirectURL(redirectURL)
-	}
-
-	//if base.usesState(){
-	//	state=base.makeState()
-	//}
-
-	return base.GetAuthURL(state)
+  return base.GetAuthURL()
 }
 
 func (base *Base) UserFromCode(code string) (*src.User, error) {
-	tokenResponse, err := base.tokenFromCode(code)
-	if err != nil {
-		return nil, err
-	}
+  tokenResponse, err := base.tokenFromCode(code)
+  if err != nil {
+    return nil, err
+  }
 
-	user, err := base.UserFromToken((*tokenResponse)[base.accessTokenKey].(string))
-	if err != nil {
-		return nil, err
-	}
+  user, err := base.UserFromToken((*tokenResponse)[base.accessTokenKey].(string))
+  if err != nil {
+    return nil, err
+  }
 
-	refreshTokenKey := ""
-	if (*tokenResponse)[base.refreshTokenKey] != nil {
-		refreshTokenKey = (*tokenResponse)[base.refreshTokenKey].(string)
-	}
+  refreshTokenKey := ""
+  if (*tokenResponse)[base.refreshTokenKey] != nil {
+    refreshTokenKey = (*tokenResponse)[base.refreshTokenKey].(string)
+  }
 
-	expiresInKey := 0
-	if (*tokenResponse)[base.expiresInKey] != nil {
-		expiresInKey = (*tokenResponse)[base.expiresInKey].(int)
-	}
+  expiresInKey := 0
+  if (*tokenResponse)[base.expiresInKey] != nil {
+    expiresInKey = (*tokenResponse)[base.expiresInKey].(int)
+  }
 
-	return user.SetRefreshToken(refreshTokenKey).
-		SetExpiresIn(expiresInKey).
-		SetTokenResponse(tokenResponse), nil
+  return user.SetRefreshToken(refreshTokenKey).
+    SetExpiresIn(expiresInKey).
+    SetTokenResponse(tokenResponse), nil
 }
 
 func (base *Base) UserFromToken(token string) (*src.User, error) {
-	user, err := base.GetUserByToken(token)
-	if err != nil {
-		return nil, err
-	}
+  user, err := base.GetUserByToken(token)
+  if err != nil {
+    return nil, err
+  }
 
-	return base.MapUserToObject(user).
-		SetProvider(base).
-		SetRaw(*user).
-		SetAccessToken(token), nil
+  return base.MapUserToObject(user).
+    SetProvider(base).
+    SetRaw(*user).
+    SetAccessToken(token), nil
 }
 
 func (base *Base) tokenFromCode(code string) (*object.HashMap, error) {
 
-	outResponse := &weCom.ResponseTokenFromCode{}
+  outResponse := &weCom.ResponseTokenFromCode{}
 
-	response, err := base.GetHttpClient().PerformRequest(
-		base.GetTokenURL(""),
-		"POST",
-		&object.HashMap{
-			"form_params": base.GetTokenFields(code),
-			"headers": &object.StringMap{
-				"Accept": "application/json",
-			},
-		},
-		false, nil,
-		outResponse,
-	)
+  response, err := base.GetHttpClient().PerformRequest(
+    base.GetTokenURL(),
+    "POST",
+    &object.HashMap{
+      "form_params": base.GetTokenFields(code),
+      "headers": &object.StringMap{
+        "Accept": "application/json",
+      },
+    },
+    false, nil,
+    outResponse,
+  )
 
-	return base.normalizeAccessTokenResponse(response), err
+  if err!=nil{
+    return nil ,err
+  }
+
+  return base.normalizeAccessTokenResponse(response)
 }
 
 func (base *Base) refreshToken(refreshToken string) error {
-	return errors.New("refreshToken does not support")
+  return errors.New("refreshToken does not support")
 
 }
 
 func (base *Base) WithRedirectURL(redirectURL string) src.ProviderInterface {
-	base.redirectURL = redirectURL
+  base.redirectURL = redirectURL
 
-	return base
+  return base
 }
 
 func (base *Base) WithState(state string) src.ProviderInterface {
-	base.state = state
+  base.state = state
 
-	return base
+  return base
 }
 
 func (base *Base) Scopes(scopes []string) *Base {
-	base.scopes = scopes
+  base.scopes = scopes
 
-	return base
+  return base
 }
 
 func (base *Base) With(parameters *object.StringMap) *Base {
-	base.parameters = parameters
+  base.parameters = parameters
 
-	return base
+  return base
 }
 
 func (base *Base) GetConfig() *src.Config {
-	return base.config
-}
-
-func (base *Base) buildAuthURLFromBase(url string, state string) string {
-	query := object.GetJoinedWithKSort(base.GetCodeFields(state))
-
-	return url + "?" + query + string(base.encodingType)
+  return base.config
 }
 
 func (base *Base) WithScopeSeparator(scopeSeparator string) *Base {
-	base.scopeSeparator = scopeSeparator
+  base.scopeSeparator = scopeSeparator
 
-	return base
+  return base
 }
 
 func (base *Base) GetClientID() string {
-	var result string
-	if base.config.Get("client_id", "") != nil {
-		result = base.config.Get("client_id", "").(string)
-	}
-	return result
+  var result string
+  if base.config.Get("client_id", "") != nil {
+    result = base.config.Get("client_id", "").(string)
+  }
+  return result
 }
 
 func (base *Base) GetClientSecret() string {
-	var result string
-	if base.config.Get("client_secret", "") != nil {
-		result = base.config.Get("client_secret", "").(string)
-	}
-	return result
+  var result string
+  if base.config.Get("client_secret", "") != nil {
+    result = base.config.Get("client_secret", "").(string)
+  }
+  return result
 }
 
 func (base *Base) GetHttpClient() *request.HttpRequest {
-	if base.httpClient != nil {
-		return base.httpClient
-	} else {
-		return request.NewHttpRequest(base.config.All())
-	}
+  if base.httpClient != nil {
+    return base.httpClient
+  } else {
+    return request.NewHttpRequest(base.config.All())
+  }
 
 }
 
 func (base *Base) formatScopes(scopes []string, scopeSeparator string) string {
-	return strings.Join(scopes, scopeSeparator)
+  return strings.Join(scopes, scopeSeparator)
 }
 
-func (base *Base) GetTokenFields(code string) *object.HashMap {
-	return &object.HashMap{
-		"client_id":     base.GetClientID(),
-		"client_secret": base.GetClientSecret(),
-		"code":          code,
-		"redirect_uri":  base.redirectURL,
-	}
+func (base *Base) getTokenFields(code string) *object.HashMap {
+  return &object.HashMap{
+    "client_id":     base.GetClientID(),
+    "client_secret": base.GetClientSecret(),
+    "code":          code,
+    "redirect_uri":  base.redirectURL,
+  }
+}
+
+func (base *Base) parseBody(body io.ReadCloser) (*object.HashMap, error) {
+  buf := new(bytes.Buffer)
+  _, _ = buf.ReadFrom(body)
+  jsonHashMap := object.HashMap{}
+  err := json.Unmarshal(buf.Bytes(), &jsonHashMap)
+
+  return &jsonHashMap, err
 }
 
 func (base *Base) parseAccessToken(body io.ReadCloser) (accessToken contracts.AccessTokenInterface, err error) {
-	buf := new(bytes.Buffer)
-	_, _ = buf.ReadFrom(body)
-	jsonHashMap := object.HashMap{}
-	err = json.Unmarshal(buf.Bytes(), &jsonHashMap)
 
-	if err != nil {
-		return nil, err
-	}
-	return src.NewAccessToken(&jsonHashMap)
+  jsonHashMap, err := base.parseBody(body)
+
+  if err != nil {
+    return nil, err
+  }
+  return src.NewAccessToken(jsonHashMap)
+}
+
+func (base *Base) buildAuthURLFromBase(url string, state string) string {
+  query := object.GetJoinedWithKSort(base.GetCodeFields(state))
+
+  return url + "?" + query + string(base.encodingType)
 }
 
 func (base *Base) getCodeFields() *object.StringMap {
-	fields := &object.StringMap{
-		"client_id":     base.GetClientID(),
-		"redirect_uri":  base.redirectURL,
-		"scope":         base.formatScopes(base.scopes, base.scopeSeparator),
-		"response_type": "code",
-	}
-	fields = object.MergeStringMap(fields, base.parameters)
-	if base.state != "" {
-		(*fields)["state"] = base.state
-	}
+  fields := &object.StringMap{
+    "client_id":     base.GetClientID(),
+    "redirect_uri":  base.redirectURL,
+    "scope":         base.formatScopes(base.scopes, base.scopeSeparator),
+    "response_type": "code",
+  }
+  fields = object.MergeStringMap(fields, base.parameters)
+  if base.state != "" {
+    (*fields)["state"] = base.state
+  }
 
-	return fields
+  return fields
 }
 
-func (base *Base) normalizeAccessTokenResponse(response contract2.ResponseInterface) *object.HashMap {
-	// tbd
-
-	return nil
+func (base *Base) normalizeAccessTokenResponse(response contract2.ResponseInterface) (*object.HashMap, error) {
+  // tbd
+  body, err := base.parseBody(response.GetBody())
+  if err != nil {
+    return nil, err
+  }
+  return &object.HashMap{
+    "access_token":  (*body)[base.expiresInKey],
+    "refresh_token": (*body)[base.accessTokenKey],
+    "expires_in":    (*body)[base.refreshTokenKey],
+  }, err
 }
