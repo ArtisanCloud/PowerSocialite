@@ -35,8 +35,8 @@ type Base struct {
   GetUserByToken       func(token string) (*object.HashMap, error)
   MapUserToObject      func(user *object.HashMap) *src.User
   GetAccessToken       func(token string) (contracts.AccessTokenInterface, error)
-  BuildAuthURLFromBase func(url string, state string) string
-  GetCodeFields        func(state string) *object.StringMap
+  BuildAuthURLFromBase func(url string) string
+  GetCodeFields        func() *object.StringMap
   GetTokenFields       func(code string) *object.HashMap
 }
 
@@ -246,8 +246,9 @@ func (base *Base) parseAccessToken(body io.ReadCloser) (accessToken contracts.Ac
   return src.NewAccessToken(jsonHashMap)
 }
 
-func (base *Base) buildAuthURLFromBase(url string, state string) string {
-  query := object.GetJoinedWithKSort(base.GetCodeFields(state))
+func (base *Base) buildAuthURLFromBase(url string, ) string {
+
+  query := object.GetJoinedWithKSort(base.GetCodeFields())
 
   return url + "?" + query + string(base.encodingType)
 }
