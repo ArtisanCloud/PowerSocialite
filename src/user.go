@@ -21,8 +21,8 @@ func NewUser(attributes *object.HashMap, provider ProviderInterface) *User {
 }
 
 func (user *User) GetID() string {
-	if user.Attributes["userID"] != nil {
-		return user.Attributes["userID"].(string)
+	if user.Attributes["id"] != nil {
+		return user.Attributes["id"].(string)
 	} else {
 		return user.GetEmail()
 	}
@@ -122,7 +122,8 @@ func (user *User) SetRaw(u object.HashMap) *User {
 }
 func (user *User) GetRaw() *object.HashMap {
 	if user.GetAttribute("raw", nil) != nil {
-		return user.GetAttribute("raw", nil).(*object.HashMap)
+		raw:=user.GetAttribute("raw", nil).(object.HashMap)
+		return &raw
 	}
 	return nil
 
