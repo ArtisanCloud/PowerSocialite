@@ -21,8 +21,8 @@ func NewUser(attributes *object.HashMap, provider ProviderInterface) *User {
 }
 
 func (user *User) GetID() string {
-	if user.Attributes["userID"] != nil {
-		return user.Attributes["userID"].(string)
+	if user.Attributes["id"] != nil {
+		return user.Attributes["id"].(string)
 	} else {
 		return user.GetEmail()
 	}

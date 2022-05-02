@@ -83,7 +83,7 @@ func (provider *WeCom) UserFromCode(code string) (*src.User, error) {
     }
     user = provider.MapUserToObject(detail)
   } else {
-    info, err := object.StructToHashMap(userDetail)
+    info, err := object.StructToHashMap(userInfo)
     if err != nil {
       return nil, err
     }
@@ -379,10 +379,10 @@ func (provider *WeCom) OverrideMapUserToObject() {
     // weCom.ResponseGetUserInfo is response from code to user
 
     return src.NewUser(&object.HashMap{
-      "id":       collectionUser.Get("UserID", ""),
-      "userId":   collectionUser.Get("UserId", ""),
-      "openid":   collectionUser.Get("OpenId", ""),
-      "deviceId": collectionUser.Get("DeviceId", ""),
+      "id":       collectionUser.Get("UserId", collectionUser.Get("OpenId", "")),
+      //"userId":   collectionUser.Get("UserId", ""),
+      //"openid":   collectionUser.Get("OpenId", ""),
+      //"deviceId": collectionUser.Get("DeviceId", ""),
     }, provider)
   }
 }
