@@ -1,331 +1,327 @@
 package providers
 
 import (
-  "errors"
-  "fmt"
-  "github.com/ArtisanCloud/PowerLibs/object"
-  "github.com/ArtisanCloud/PowerSocialite/src"
-  "github.com/ArtisanCloud/PowerSocialite/src/exceptions"
-  "github.com/ArtisanCloud/PowerSocialite/src/response/weCom"
+	"errors"
+	"fmt"
+	"github.com/ArtisanCloud/PowerLibs/object"
+	"github.com/ArtisanCloud/PowerSocialite/src"
+	"github.com/ArtisanCloud/PowerSocialite/src/exceptions"
+	"github.com/ArtisanCloud/PowerSocialite/src/response/weCom"
 )
 
 type WeCom struct {
-  *Base
+	*Base
 
-  detailed       bool
-  agentId        int
-  apiAccessToken string
-  baseUrl        string
+	detailed       bool
+	agentId        int
+	apiAccessToken string
+	baseUrl        string
 }
 
 func NewWeCom(config *object.HashMap) *WeCom {
 
-  baseURL := "https://api.weixin.qq.com/sns"
-  if (*config)["base_url"]!=nil{
-    userBaseURL:=(*config)["base_url"].(string)
-    if  userBaseURL != ""{
-      baseURL = userBaseURL
-    }
-  }
+	baseURL := "https://api.weixin.qq.com/sns"
+	if (*config)["base_url"] != nil {
+		userBaseURL := (*config)["base_url"].(string)
+		if userBaseURL != "" {
+			baseURL = userBaseURL
+		}
+	}
 
-  wecom := &WeCom{
-    Base: NewBase(config),
-    baseUrl: baseURL,
-  }
+	wecom := &WeCom{
+		Base:    NewBase(config),
+		baseUrl: baseURL,
+	}
 
-  wecom.OverrideGetAuthURL()
-  wecom.OverrideGetTokenURL()
-  wecom.OverrideGetUserByToken()
-  wecom.OverrideMapUserToObject()
+	wecom.OverrideGetAuthURL()
+	wecom.OverrideGetTokenURL()
+	wecom.OverrideGetUserByToken()
+	wecom.OverrideMapUserToObject()
 
-  return wecom
+	return wecom
 }
 
 func (provider *WeCom) SetAgentID(agentId int) *WeCom {
-  provider.agentId = agentId
+	provider.agentId = agentId
 
-  return provider
+	return provider
 }
 
 func (provider *WeCom) WithAgentId(agentId int) *WeCom {
 
-  return provider.SetAgentID(agentId)
+	return provider.SetAgentID(agentId)
 }
 
 func (provider *WeCom) GetBaseURL() string {
-  return provider.baseUrl
+	return provider.baseUrl
 }
 
-
 func (provider *WeCom) UserFromCode(code string) (*src.User, error) {
-  token, err := provider.GetAPIAccessToken()
-  if err != nil {
-    return nil, err
-  }
+	token, err := provider.GetAPIAccessToken()
+	if err != nil {
+		return nil, err
+	}
 
-  userInfo, err := provider.GetUser(token, code)
-  if err != nil {
-    return nil, err
-  }
-  var (
-    user       *src.User
-    userDetail *weCom.ResponseGetUserByID
-  )
+	userInfo, err := provider.GetUser(token, code)
+	if err != nil {
+		return nil, err
+	}
+	var (
+		user       *src.User
+		userDetail *weCom.ResponseGetUserByID
+	)
 
-  if provider.detailed {
-    userDetail, err = provider.GetUserByID(userInfo.UserID)
-    if err != nil {
-      return nil, err
-    }
-    detail, err := object.StructToHashMap(userDetail)
-    if err != nil {
-      return nil, err
-    }
-    user = provider.MapUserToObject(detail)
-  } else {
-    info, err := object.StructToHashMap(userInfo)
-    if err != nil {
-      return nil, err
-    }
-    user = provider.MapUserToObject(info)
-  }
+	if provider.detailed {
+		userDetail, err = provider.GetUserByID(userInfo.UserID)
+		if err != nil {
+			return nil, err
+		}
+		detail, err := object.StructToHashMap(userDetail)
+		if err != nil {
+			return nil, err
+		}
+		user = provider.MapUserToObject(detail)
+	} else {
+		info, err := object.StructToHashMap(userInfo)
+		if err != nil {
+			return nil, err
+		}
+		user = provider.MapUserToObject(info)
+	}
 
-  return user.SetProvider(provider).SetRaw(*user.GetAttributes()), nil
+	return user.SetProvider(provider).SetRaw(*user.GetAttributes()), nil
 }
 
 func (provider *WeCom) Detailed() *WeCom {
-  provider.detailed = true
+	provider.detailed = true
 
-  return provider
+	return provider
 }
 
 func (provider *WeCom) WithApiAccessToken(apiAccessToken string) *WeCom {
 
-  provider.apiAccessToken = apiAccessToken
+	provider.apiAccessToken = apiAccessToken
 
-  return provider
+	return provider
 }
 
 func (provider *WeCom) GetOAuthURL() string {
-  queries := &object.StringMap{
-    "appid":         provider.GetClientID(),
-    "redirect_uri":  provider.redirectURL,
-    "response_type": "code",
-    "scope":         provider.formatScopes(provider.scopes, provider.scopeSeparator),
-    "state":         provider.state,
-  }
-  strQueries := object.ConvertStringMapToString(queries, "&")
-  strQueries = "https://open.weixin.qq.com/connect/oauth2/authorize?" + strQueries + "#wechat_redirect"
-  return strQueries
+	queries := &object.StringMap{
+		"appid":         provider.GetClientID(),
+		"redirect_uri":  provider.redirectURL,
+		"response_type": "code",
+		"scope":         provider.formatScopes(provider.scopes, provider.scopeSeparator),
+		"state":         provider.state,
+	}
+	strQueries := object.ConvertStringMapToString(queries, "&")
+	strQueries = "https://open.weixin.qq.com/connect/oauth2/authorize?" + strQueries + "#wechat_redirect"
+	return strQueries
 }
 
 func (provider *WeCom) GetQrConnectURL() (string, error) {
-  strAgentID := provider.agentId
-  if strAgentID == 0 {
-    strAgentID = provider.config.Get("agent_id", 0).(int)
-    if strAgentID == 0 {
-      return "", errors.New(fmt.Sprintf("You must config the `agentid` in configuration or using `setAgentid(%d)`.", strAgentID))
-    }
-  }
+	strAgentID := provider.agentId
+	if strAgentID == 0 {
+		strAgentID = provider.config.Get("agent_id", 0).(int)
+		if strAgentID == 0 {
+			return "", errors.New(fmt.Sprintf("You must config the `agentid` in configuration or using `setAgentid(%d)`.", strAgentID))
+		}
+	}
 
-  queries := &object.StringMap{
-    "appid":        provider.GetClientID(),
-    "agentid":      fmt.Sprintf("%d", strAgentID),
-    "redirect_uri": provider.redirectURL,
-    "state":        provider.state,
-  }
-  strQueries := object.ConvertStringMapToString(queries, "&")
-  strQueries = "https://open.work.weixin.qq.com/wwopen/sso/qrConnect?" + strQueries + "#wechat_redirect"
-  return strQueries, nil
+	queries := &object.StringMap{
+		"appid":        provider.GetClientID(),
+		"agentid":      fmt.Sprintf("%d", strAgentID),
+		"redirect_uri": provider.redirectURL,
+		"state":        provider.state,
+	}
+	strQueries := object.ConvertStringMapToString(queries, "&")
+	strQueries = "https://open.work.weixin.qq.com/wwopen/sso/qrConnect?" + strQueries + "#wechat_redirect"
+	return strQueries, nil
 }
-
 
 func (provider *WeCom) ContactFromCode(code string) (*src.User, error) {
-  token, err := provider.GetAPIAccessToken()
-  if err != nil {
-    return nil, err
-  }
+	token, err := provider.GetAPIAccessToken()
+	if err != nil {
+		return nil, err
+	}
 
-  userInfo, err := provider.GetUser(token,code)
-  if err != nil {
-    return nil, err
-  }
-  var (
-    user       *src.User
-    userDetail *weCom.ResponseGetUserByID
-  )
+	userInfo, err := provider.GetUser(token, code)
+	if err != nil {
+		return nil, err
+	}
+	var (
+		user       *src.User
+		userDetail *weCom.ResponseGetUserByID
+	)
 
-  if provider.detailed {
-    userDetail, err = provider.GetUserByID(userInfo.UserID)
-    if err != nil {
-      return nil, err
-    }
-    user = provider.Detailed().MapUserToContact(userDetail)
-  } else {
-    user = provider.MapUserToContact(userInfo)
-  }
+	if provider.detailed {
+		userDetail, err = provider.GetUserByID(userInfo.UserID)
+		if err != nil {
+			return nil, err
+		}
+		user = provider.Detailed().MapUserToContact(userDetail)
+	} else {
+		user = provider.MapUserToContact(userInfo)
+	}
 
-  return user.SetProvider(provider).SetRaw(*user.GetAttributes()), nil
+	return user.SetProvider(provider).SetRaw(*user.GetAttributes()), nil
 }
 
-
-
 func (provider *WeCom) GetAPIAccessToken() (result string, err error) {
-  if provider.apiAccessToken == "" {
-    provider.apiAccessToken, err = provider.requestApiAccessToken()
-    if err != nil {
-      return "", err
-    }
-  }
-  return provider.apiAccessToken, nil
+	if provider.apiAccessToken == "" {
+		provider.apiAccessToken, err = provider.requestApiAccessToken()
+		if err != nil {
+			return "", err
+		}
+	}
+	return provider.apiAccessToken, nil
 }
 
 func (provider *WeCom) GetUser(token string, code string) (*weCom.ResponseGetUserInfo, error) {
 
-  outResponse := &weCom.ResponseGetUserInfo{}
-  provider.GetHttpClient().PerformRequest(
-    "https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo",
-    "GET",
-    &object.HashMap{
-      "query": &object.StringMap{
-        "access_token": token,
-        "code":         code,
-      },
-    },
-    false, nil,
-    outResponse,
-  )
-  if outResponse.ErrCode > 0 || (outResponse.UserID == "" && outResponse.DeviceID == "" && outResponse.OpenID == "") {
-    //defer exceptions.NewAuthorizeFailedException().HandleException(nil, "base.get.userID", outResponse)
-    //if outResponse.ErrMSG == "" {
-    //  outResponse.ErrMSG = "unknow"
-    //}
-    return nil, errors.New(fmt.Sprintf("Failed to get user openid:%s", outResponse.ErrMSG))
-  } else if outResponse.UserID == "" {
-    provider.detailed = false
-  }
-  return outResponse, nil
+	outResponse := &weCom.ResponseGetUserInfo{}
+	provider.GetHttpClient().PerformRequest(
+		"https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo",
+		"GET",
+		&object.HashMap{
+			"query": &object.StringMap{
+				"access_token": token,
+				"code":         code,
+			},
+		},
+		false, nil,
+		outResponse,
+	)
+	if outResponse.ErrCode > 0 || (outResponse.UserID == "" && outResponse.DeviceID == "" && outResponse.OpenID == "") {
+		//defer exceptions.NewAuthorizeFailedException().HandleException(nil, "base.get.userID", outResponse)
+		//if outResponse.ErrMSG == "" {
+		//  outResponse.ErrMSG = "unknow"
+		//}
+		return nil, errors.New(fmt.Sprintf("Failed to get user openid:%s", outResponse.ErrMSG))
+	} else if outResponse.UserID == "" {
+		provider.detailed = false
+	}
+	return outResponse, nil
 }
 
 func (provider *WeCom) GetUserByID(userID string) (*weCom.ResponseGetUserByID, error) {
 
-  outResponse := &weCom.ResponseGetUserByID{}
-  strAPIAccessToken, err := provider.GetAPIAccessToken()
-  if err != nil {
-    return nil, err
-  }
-  provider.GetHttpClient().PerformRequest(
-    "https://qyapi.weixin.qq.com/cgi-bin/user/get",
-    "POST",
-    &object.HashMap{
-      "query": &object.StringMap{
-        "access_token": strAPIAccessToken,
-        "userid":       userID,
-      },
-    },
-    false, nil,
-    outResponse,
-  )
-  if outResponse.ErrCode > 0 || outResponse.UserID == "" {
-    //defer (&exceptions.AuthorizeFailedException{}).HandleException(nil, "base.refresh.token", outResponse)
-    //if outResponse.ErrMSG == "" {
-    //  outResponse.ErrMSG = "unknow"
-    //}
-    return nil, errors.New(fmt.Sprintf("Failed to get user:%s", outResponse.ErrMSG))
-  }
+	outResponse := &weCom.ResponseGetUserByID{}
+	strAPIAccessToken, err := provider.GetAPIAccessToken()
+	if err != nil {
+		return nil, err
+	}
+	provider.GetHttpClient().PerformRequest(
+		"https://qyapi.weixin.qq.com/cgi-bin/user/get",
+		"POST",
+		&object.HashMap{
+			"query": &object.StringMap{
+				"access_token": strAPIAccessToken,
+				"userid":       userID,
+			},
+		},
+		false, nil,
+		outResponse,
+	)
+	if outResponse.ErrCode > 0 || outResponse.UserID == "" {
+		//defer (&exceptions.AuthorizeFailedException{}).HandleException(nil, "base.refresh.token", outResponse)
+		//if outResponse.ErrMSG == "" {
+		//  outResponse.ErrMSG = "unknow"
+		//}
+		return nil, errors.New(fmt.Sprintf("Failed to get user:%s", outResponse.ErrMSG))
+	}
 
-  return outResponse, nil
+	return outResponse, nil
 }
 
 func (provider *WeCom) requestApiAccessToken() (string, error) {
-  outResponse := &weCom.ResponseTokenFromCode{}
+	outResponse := &weCom.ResponseTokenFromCode{}
 
-  var (
-    corpID     string = provider.config.Get("corpid", "").(string)
-    corpSecret string = provider.config.Get("corpsecret", "").(string)
-  )
-  pCorpID := provider.config.Get("corp_id", nil)
-  pCorpSecret := provider.config.Get("corp_secret", nil)
+	var (
+		corpID     string = provider.config.Get("corpid", "").(string)
+		corpSecret string = provider.config.Get("corpsecret", "").(string)
+	)
+	pCorpID := provider.config.Get("corp_id", nil)
+	pCorpSecret := provider.config.Get("corp_secret", nil)
 
-  if pCorpID != nil && pCorpID.(string) != "" {
-    corpID = pCorpID.(string)
-  }
-  if pCorpSecret != nil && pCorpSecret.(string) != "" {
-    corpSecret = pCorpSecret.(string)
-  }
+	if pCorpID != nil && pCorpID.(string) != "" {
+		corpID = pCorpID.(string)
+	}
+	if pCorpSecret != nil && pCorpSecret.(string) != "" {
+		corpSecret = pCorpSecret.(string)
+	}
 
-  provider.GetHttpClient().PerformRequest(
-    "https://qyapi.weixin.qq.com/cgi-bin/gettoken",
-    "GET",
-    &object.HashMap{
-      "query": &object.StringMap{
-        "corpid":     corpID,
-        "corpsecret": corpSecret,
-      },
-    },
-    false, nil,
-    outResponse,
-  )
-  if outResponse.ErrCode > 0 {
-    defer (&exceptions.AuthorizeFailedException{}).HandleException(nil, "base.refresh.token", outResponse)
-    if outResponse.ErrMSG == "" {
-      outResponse.ErrMSG = "unknow"
-    }
-    return "", errors.New(fmt.Sprintf("Failed to get api access_token:%s", outResponse.ErrMSG))
-  }
-  return outResponse.AccessToken, nil
+	provider.GetHttpClient().PerformRequest(
+		"https://qyapi.weixin.qq.com/cgi-bin/gettoken",
+		"GET",
+		&object.HashMap{
+			"query": &object.StringMap{
+				"corpid":     corpID,
+				"corpsecret": corpSecret,
+			},
+		},
+		false, nil,
+		outResponse,
+	)
+	if outResponse.ErrCode > 0 {
+		defer (&exceptions.AuthorizeFailedException{}).HandleException(nil, "base.refresh.token", outResponse)
+		if outResponse.ErrMSG == "" {
+			outResponse.ErrMSG = "unknow"
+		}
+		return "", errors.New(fmt.Sprintf("Failed to get api access_token:%s", outResponse.ErrMSG))
+	}
+	return outResponse.AccessToken, nil
 
 }
 
 func (provider *WeCom) IdentifyUserAsEmployee(user *src.User) (userID string) {
-  userID = user.GetAttribute("userID", "").(string)
+	userID = user.GetAttribute("userID", "").(string)
 
-  return userID
+	return userID
 
 }
 
 func (provider *WeCom) IdentifyUserAsContact(user *src.User) (openID string) {
-  openID = user.GetAttribute("openID", "").(string)
+	openID = user.GetAttribute("openID", "").(string)
 
-  return openID
+	return openID
 }
 
 // Override GetCredentials
 func (provider *WeCom) OverrideGetAuthURL() {
-  provider.GetAuthURL = func() (string, error) {
-    // 网页授权登录
-    if provider.agentId > 0 {
-      return provider.GetOAuthURL(), nil
-    }
+	provider.GetAuthURL = func() (string, error) {
+		// 网页授权登录
+		if provider.agentId > 0 {
+			return provider.GetOAuthURL(), nil
+		}
 
-    // 第三方网页应用登录（扫码登录）
-    return provider.GetQrConnectURL()
-  }
+		// 第三方网页应用登录（扫码登录）
+		return provider.GetQrConnectURL()
+	}
 }
 func (provider *WeCom) OverrideGetTokenURL() {
-  provider.GetTokenURL = func() string {
-    return ""
-  }
+	provider.GetTokenURL = func() string {
+		return ""
+	}
 }
 
 func (provider *WeCom) OverrideGetUserByToken() {
-  provider.GetUserByToken = func(token string) (*object.HashMap, error) {
+	provider.GetUserByToken = func(token string) (*object.HashMap, error) {
 
-    return nil, errors.New("WeWork doesn't support access_token mode")
+		return nil, errors.New("WeWork doesn't support access_token mode")
 
-    //userInfo, err := provider.GetUserInfo(token)
-    //if err != nil {
-    //  return nil, err
-    //}
-    //
-    //if provider.detailed && (*userInfo)["user_ticket"] != nil {
-    //  return provider.GetUserDetail(token, (*userInfo)["user_ticket"])
-    //}
-    //
-    //provider.detailed = false
-    //
-    //return userInfo, err
-  }
+		//userInfo, err := provider.GetUserInfo(token)
+		//if err != nil {
+		//  return nil, err
+		//}
+		//
+		//if provider.detailed && (*userInfo)["user_ticket"] != nil {
+		//  return provider.GetUserDetail(token, (*userInfo)["user_ticket"])
+		//}
+		//
+		//provider.detailed = false
+		//
+		//return userInfo, err
+	}
 }
 
 //func (provider *WeCom) GetUserInfo(token string) (*object.HashMap, error) {
@@ -362,48 +358,48 @@ func (provider *WeCom) OverrideGetUserByToken() {
 
 func (provider *WeCom) OverrideMapUserToObject() {
 
-  provider.MapUserToObject = func(user *object.HashMap) *src.User {
+	provider.MapUserToObject = func(user *object.HashMap) *src.User {
 
-    collectionUser := object.NewCollection(user)
+		collectionUser := object.NewCollection(user)
 
-    if provider.detailed {
-      // weCom.ResponseGetUserByID is detail response
-      return src.NewUser(&object.HashMap{
-        "id":     collectionUser.Get("userid", ""),
-        "name":   collectionUser.Get("name", ""),
-        "avatar": collectionUser.Get("avatar", ""),
-        "email":  collectionUser.Get("email", ""),
-      }, provider)
-    }
+		if provider.detailed {
+			// weCom.ResponseGetUserByID is detail response
+			return src.NewUser(&object.HashMap{
+				"id":     collectionUser.Get("userid", ""),
+				"name":   collectionUser.Get("name", ""),
+				"avatar": collectionUser.Get("avatar", ""),
+				"email":  collectionUser.Get("email", ""),
+			}, provider)
+		}
 
-    // weCom.ResponseGetUserInfo is response from code to user
+		// weCom.ResponseGetUserInfo is response from code to user
 
-    return src.NewUser(&object.HashMap{
-      "id":       collectionUser.Get("UserId", collectionUser.Get("OpenId", "")),
-      //"userId":   collectionUser.Get("UserId", ""),
-      //"openid":   collectionUser.Get("OpenId", ""),
-      //"deviceId": collectionUser.Get("DeviceId", ""),
-    }, provider)
-  }
+		return src.NewUser(&object.HashMap{
+			"id": collectionUser.Get("UserId", collectionUser.Get("OpenId", "")),
+			//"userId":   collectionUser.Get("UserId", ""),
+			//"openid":   collectionUser.Get("OpenId", ""),
+			//"deviceId": collectionUser.Get("DeviceId", ""),
+		}, provider)
+	}
 }
 
 func (provider *WeCom) MapUserToEmployee(user *object.HashMap) *src.User {
-  return provider.MapUserToObject(user)
+	return provider.MapUserToObject(user)
 }
 
 func (provider *WeCom) MapUserToContact(userData interface{}) *src.User {
 
-  if provider.detailed {
-    MapUser, _ := object.StructToHashMap(userData)
-    return src.NewUser(MapUser, provider)
-  }
+	if provider.detailed {
+		MapUser, _ := object.StructToHashMap(userData)
+		return src.NewUser(MapUser, provider)
+	}
 
-  userInfo := userData.(*weCom.ResponseGetUserInfo)
-  return src.NewUser(&object.HashMap{
-    "userID":         userInfo.UserID,
-    "deviceID":       userInfo.DeviceID,
-    "openID":         userInfo.OpenID,
-    "externalUserID": userInfo.ExternalUserID,
-  }, provider)
+	userInfo := userData.(*weCom.ResponseGetUserInfo)
+	return src.NewUser(&object.HashMap{
+		"userID":         userInfo.UserID,
+		"deviceID":       userInfo.DeviceID,
+		"openID":         userInfo.OpenID,
+		"externalUserID": userInfo.ExternalUserID,
+	}, provider)
 
 }
