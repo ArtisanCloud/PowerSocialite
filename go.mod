@@ -1,11 +1,11 @@
 module github.com/ArtisanCloud/PowerSocialite
 
-go 1.16
+go 1.17
 
-replace github.com/ArtisanCloud/PowerLibs => ../PowerLibs
+//replace github.com/ArtisanCloud/PowerLibs => ../PowerLibs
 
 require (
-	github.com/ArtisanCloud/PowerLibs v1.1.6
+	github.com/ArtisanCloud/PowerLibs v1.2.5
 	github.com/mattn/go-isatty v0.0.13 // indirect
 	golang.org/x/net v0.0.0-20210726213435-c6fcb2dbf985 // indirect
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
