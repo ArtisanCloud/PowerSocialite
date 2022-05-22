@@ -2,7 +2,6 @@ package providers
 
 import (
 	"fmt"
-	"net/http"
 	"net/url"
 
 	"github.com/ArtisanCloud/PowerLibs/object"
@@ -21,7 +20,7 @@ type OpenPlat struct {
 	*Base
 }
 
-func NewOpenPlat(oh *object.HashMap) *OpenPlat {
+func NewOpenPlatform(oh *object.HashMap) *OpenPlat {
 	return &OpenPlat{
 		Base: NewBase(oh),
 	}
@@ -40,15 +39,15 @@ func (provider *OpenPlat) GetWebAppRedirectURL(redirectURI, scope, state string)
 	return fmt.Sprintf(webAppRedirectOauthURL, provider.config.Get("app_id", ""), urlStr, scope, state), nil
 }
 
-// Redirect OpenPlat
-func (provider *OpenPlat) Redirect(writer http.ResponseWriter, req *http.Request, redirectURI, scope, state string) error {
-	location, err := provider.GetRedirectURL(redirectURI, scope, state)
-	if err != nil {
-		return err
-	}
-	http.Redirect(writer, req, location, http.StatusFound)
-	return nil
-}
+//// Redirect OpenPlat
+//func (provider *OpenPlat) Redirect(writer http.ResponseWriter, req *http.Request, redirectURI, scope, state string) error {
+//	location, err := provider.GetRedirectURL(redirectURI, scope, state)
+//	if err != nil {
+//		return err
+//	}
+//	http.Redirect(writer, req, location, http.StatusFound)
+//	return nil
+//}
 
 type CommonError struct {
 	ErrCode int64  `json:"errcode"`
