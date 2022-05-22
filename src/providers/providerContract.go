@@ -1,4 +1,4 @@
-package src
+package providers
 
 type ProviderInterface interface {
 	Redirect(redirectURL string) (string, error)

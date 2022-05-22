@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/ArtisanCloud/PowerLibs/http/contract"
 	"github.com/ArtisanCloud/PowerLibs/object"
-	"github.com/ArtisanCloud/PowerSocialite/src"
 	"github.com/ArtisanCloud/PowerSocialite/src/contracts"
 	"reflect"
 	"time"
@@ -202,12 +201,12 @@ func (provider *WeChat) OverrideGetUserByToken() {
 
 func (provider *WeChat) OverrideMapUserToObject() {
 
-	provider.MapUserToObject = func(user *object.HashMap) *src.User {
+	provider.MapUserToObject = func(user *object.HashMap) *User {
 
 		collectionUser := object.NewCollection(user)
 
 		// weCom.ResponseGetUserInfo is response from code to user
-		return src.NewUser(&object.HashMap{
+		return NewUser(&object.HashMap{
 			"id":       collectionUser.Get("openid", ""),
 			"name":     collectionUser.Get("nickname", ""),
 			"nickname": collectionUser.Get("nickname", ""),

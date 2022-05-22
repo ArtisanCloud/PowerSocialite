@@ -1,4 +1,4 @@
-package src
+package providers
 
 import (
 	"encoding/json"

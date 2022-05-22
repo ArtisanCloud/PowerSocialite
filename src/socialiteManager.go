@@ -19,7 +19,9 @@ type SocialiteManager struct {
 func NewSocialiteManager(config *object.HashMap) *SocialiteManager {
 
 	manager := &SocialiteManager{
-		Config: models.NewConfig(config),
+		Config:         models.NewConfig(config),
+		Resolved:       &object.HashMap{},
+		CustomCreators: &object.HashMap{},
 		Providers: []string{
 			"wechat",
 			"weCom",
@@ -35,14 +37,14 @@ func (manager *SocialiteManager) SetConfig(config *models.Config) *SocialiteMana
 	return manager
 }
 
-func (manager *SocialiteManager) Create(name string) ProviderInterface {
+func (manager *SocialiteManager) Create(name string) providers.ProviderInterface {
 	name = strings.ToLower(name)
 
 	if (*manager.Resolved)[name] == nil {
 		(*manager.Resolved)[name] = manager.CreateProvider(name)
 	}
 
-	return (*manager.Resolved)[name].(ProviderInterface)
+	return (*manager.Resolved)[name].(providers.ProviderInterface)
 }
 
 func (manager *SocialiteManager) Extend(name string, callback func()) *SocialiteManager {
@@ -54,7 +56,7 @@ func (manager *SocialiteManager) GetResolvedProviders() *object.HashMap {
 	return manager.Resolved
 }
 
-func (manager *SocialiteManager) BuildProvider(provider string, config *object.HashMap) ProviderInterface {
+func (manager *SocialiteManager) BuildProvider(provider string, config *object.HashMap) providers.ProviderInterface {
 	switch provider {
 	case "wechat":
 		return providers.NewWeChat(config)
@@ -77,7 +79,7 @@ func (manager *SocialiteManager) BuildProvider(provider string, config *object.H
 	return nil
 }
 
-func (manager *SocialiteManager) CreateProvider(name string) ProviderInterface {
+func (manager *SocialiteManager) CreateProvider(name string) providers.ProviderInterface {
 	config := manager.Config.Get("name", &object.HashMap{}).(*object.HashMap)
 	provider := name
 	if config != nil && (*config)["provider"] != nil {
@@ -89,14 +91,14 @@ func (manager *SocialiteManager) CreateProvider(name string) ProviderInterface {
 		return manager.CallCustomCreator(provider, config)
 	}
 
-	if manager.IsValidProvider(provider) {
+	if !manager.IsValidProvider(provider) {
 		panic(fmt.Sprintf("Provider [%s] not supported.", provider))
 	}
 
 	return manager.BuildProvider(provider, config)
 }
 
-func (manager *SocialiteManager) CallCustomCreator(driver string, config *object.HashMap) ProviderInterface {
+func (manager *SocialiteManager) CallCustomCreator(driver string, config *object.HashMap) providers.ProviderInterface {
 
 	return nil
 }

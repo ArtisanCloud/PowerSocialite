@@ -7,7 +7,7 @@ import (
 	contract2 "github.com/ArtisanCloud/PowerLibs/http/contract"
 	"github.com/ArtisanCloud/PowerLibs/http/request"
 	"github.com/ArtisanCloud/PowerLibs/object"
-	"github.com/ArtisanCloud/PowerSocialite/src"
+	"github.com/ArtisanCloud/PowerSocialite/src/configs"
 	"github.com/ArtisanCloud/PowerSocialite/src/contracts"
 	"github.com/ArtisanCloud/PowerSocialite/src/response/weCom"
 	"io"
@@ -15,10 +15,10 @@ import (
 )
 
 type Base struct {
-	src.ProviderInterface
+	ProviderInterface
 
 	state           string
-	config          *src.Config
+	config          *configs.Config
 	redirectURL     string
 	parameters      *object.StringMap
 	scopes          []string
@@ -33,7 +33,7 @@ type Base struct {
 	GetAuthURL           func() (string, error)
 	GetTokenURL          func() string
 	GetUserByToken       func(token string) (*object.HashMap, error)
-	MapUserToObject      func(user *object.HashMap) *src.User
+	MapUserToObject      func(user *object.HashMap) *User
 	GetAccessToken       func(token string) (contracts.AccessTokenInterface, error)
 	BuildAuthURLFromBase func(url string) string
 	GetCodeFields        func() *object.StringMap
@@ -43,7 +43,7 @@ type Base struct {
 func NewBase(config *object.HashMap) *Base {
 
 	base := &Base{
-		config:          src.NewConfig(config),
+		config:          configs.NewConfig(config),
 		scopes:          []string{},
 		expiresInKey:    "expires_in",
 		accessTokenKey:  "access_token",
@@ -88,7 +88,7 @@ func (base *Base) Redirect(redirectURL string) (string, error) {
 	return base.GetAuthURL()
 }
 
-func (base *Base) UserFromCode(code string) (*src.User, error) {
+func (base *Base) UserFromCode(code string) (*User, error) {
 	tokenResponse, err := base.tokenFromCode(code)
 	if err != nil {
 		return nil, err
@@ -114,7 +114,7 @@ func (base *Base) UserFromCode(code string) (*src.User, error) {
 		SetTokenResponse(tokenResponse), nil
 }
 
-func (base *Base) UserFromToken(token string) (*src.User, error) {
+func (base *Base) UserFromToken(token string) (*User, error) {
 	user, err := base.GetUserByToken(token)
 	if err != nil {
 		return nil, err
@@ -155,13 +155,13 @@ func (base *Base) refreshToken(refreshToken string) error {
 
 }
 
-func (base *Base) WithRedirectURL(redirectURL string) src.ProviderInterface {
+func (base *Base) WithRedirectURL(redirectURL string) ProviderInterface {
 	base.redirectURL = redirectURL
 
 	return base
 }
 
-func (base *Base) WithState(state string) src.ProviderInterface {
+func (base *Base) WithState(state string) ProviderInterface {
 	base.state = state
 
 	return base
@@ -179,7 +179,7 @@ func (base *Base) With(parameters *object.StringMap) *Base {
 	return base
 }
 
-func (base *Base) GetConfig() *src.Config {
+func (base *Base) GetConfig() *configs.Config {
 	return base.config
 }
 
@@ -243,7 +243,7 @@ func (base *Base) parseAccessToken(body io.ReadCloser) (accessToken contracts.Ac
 	if err != nil {
 		return nil, err
 	}
-	return src.NewAccessToken(jsonHashMap)
+	return NewAccessToken(jsonHashMap)
 }
 
 func (base *Base) buildAuthURLFromBase(url string) string {
