@@ -40,6 +40,10 @@ func NewWeCom(config *object.HashMap) *WeCom {
 	return wecom
 }
 
+func (provider *WeCom) GetName() string {
+	return "wecom"
+}
+
 func (provider *WeCom) SetAgentID(agentId int) *WeCom {
 	provider.agentId = agentId
 

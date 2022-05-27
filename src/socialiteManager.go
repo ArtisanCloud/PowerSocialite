@@ -24,8 +24,8 @@ func NewSocialiteManager(config *object.HashMap) *SocialiteManager {
 		CustomCreators: &object.HashMap{},
 		Providers: []string{
 			"wechat",
-			"weCom",
-			"openPlatform",
+			"wecom",
+			"openplatform",
 		},
 	}
 
@@ -63,13 +63,13 @@ func (manager *SocialiteManager) BuildProvider(provider string, config *object.H
 
 		break
 
-	case "weCom":
+	case "wecom":
 		return providers.NewWeCom(config)
 
 		break
 
-	case "openPlatform":
-		return providers.NewOpenPlatform(config)
+	case "openplatform":
+		return providers.NewOpenPlatformform(config)
 
 		break
 
@@ -80,7 +80,7 @@ func (manager *SocialiteManager) BuildProvider(provider string, config *object.H
 }
 
 func (manager *SocialiteManager) CreateProvider(name string) providers.ProviderInterface {
-	config := manager.Config.Get("name", &object.HashMap{}).(*object.HashMap)
+	config := manager.Config.Get(name, &object.HashMap{}).(*object.HashMap)
 	provider := name
 	if config != nil && (*config)["provider"] != nil {
 		provider = (*config)["provider"].(string)

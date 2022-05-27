@@ -30,6 +30,7 @@ type Base struct {
 	accessTokenKey  string
 	refreshTokenKey string
 
+	TokenFromCode        func(code string) (*object.HashMap, error)
 	GetAuthURL           func() (string, error)
 	GetTokenURL          func() string
 	GetUserByToken       func(token string) (*object.HashMap, error)
@@ -37,7 +38,7 @@ type Base struct {
 	GetAccessToken       func(token string) (contracts.AccessTokenInterface, error)
 	BuildAuthURLFromBase func(url string) string
 	GetCodeFields        func() *object.StringMap
-	GetTokenFields       func(code string) *object.HashMap
+	GetTokenFields       func(code string) *object.StringMap
 }
 
 func NewBase(config *object.HashMap) *Base {
@@ -77,6 +78,8 @@ func NewBase(config *object.HashMap) *Base {
 		base.config.Set("redirect", redirectURL)
 	}
 
+	base.OverrideTokenFromCode()
+
 	return base
 }
 
@@ -89,7 +92,7 @@ func (base *Base) Redirect(redirectURL string) (string, error) {
 }
 
 func (base *Base) UserFromCode(code string) (*User, error) {
-	tokenResponse, err := base.tokenFromCode(code)
+	tokenResponse, err := base.TokenFromCode(code)
 	if err != nil {
 		return nil, err
 	}
@@ -126,28 +129,29 @@ func (base *Base) UserFromToken(token string) (*User, error) {
 		SetAccessToken(token), nil
 }
 
-func (base *Base) tokenFromCode(code string) (*object.HashMap, error) {
+func (base *Base) OverrideTokenFromCode() {
+	base.TokenFromCode = func(code string) (*object.HashMap, error) {
+		outResponse := &weCom.ResponseTokenFromCode{}
 
-	outResponse := &weCom.ResponseTokenFromCode{}
-
-	response, err := base.GetHttpClient().PerformRequest(
-		base.GetTokenURL(),
-		"POST",
-		&object.HashMap{
-			"form_params": base.GetTokenFields(code),
-			"headers": &object.StringMap{
-				"Accept": "application/json",
+		response, err := base.GetHttpClient().PerformRequest(
+			base.GetTokenURL(),
+			"POST",
+			&object.HashMap{
+				"form_params": base.GetTokenFields(code),
+				"headers": &object.HashMap{
+					"Accept": "application/json",
+				},
 			},
-		},
-		false, nil,
-		outResponse,
-	)
+			false, nil,
+			outResponse,
+		)
 
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
+
+		return base.normalizeAccessTokenResponse(response)
 	}
-
-	return base.normalizeAccessTokenResponse(response)
 }
 
 func (base *Base) refreshToken(refreshToken string) error {
@@ -218,8 +222,8 @@ func (base *Base) formatScopes(scopes []string, scopeSeparator string) string {
 	return strings.Join(scopes, scopeSeparator)
 }
 
-func (base *Base) getTokenFields(code string) *object.HashMap {
-	return &object.HashMap{
+func (base *Base) getTokenFields(code string) *object.StringMap {
+	return &object.StringMap{
 		"client_id":     base.GetClientID(),
 		"client_secret": base.GetClientSecret(),
 		"code":          code,

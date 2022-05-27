@@ -16,31 +16,35 @@ const (
 	checkAccessTokenURL    = "https://api.weixin.qq.com/sns/auth?access_token=%s&openid=%s"
 )
 
-type OpenPlat struct {
+type OpenPlatform struct {
 	*Base
 }
 
-func NewOpenPlatform(oh *object.HashMap) *OpenPlat {
-	return &OpenPlat{
+func NewOpenPlatformform(oh *object.HashMap) *OpenPlatform {
+	return &OpenPlatform{
 		Base: NewBase(oh),
 	}
 }
 
+func (provider *OpenPlatform) GetName() string {
+	return "openplatform"
+}
+
 // GetRedirectURL 获取跳转的url地址
-func (provider *OpenPlat) GetRedirectURL(redirectURI, scope, state string) (string, error) {
+func (provider *OpenPlatform) GetRedirectURL(redirectURI, scope, state string) (string, error) {
 	// url encode
 	urlStr := url.QueryEscape(redirectURI)
 	return fmt.Sprintf(redirectOauthURL, provider.config.Get("app_id", ""), urlStr, scope, state), nil
 }
 
 // GetWebAppRedirectURL 获取网页应用跳转的url地址
-func (provider *OpenPlat) GetWebAppRedirectURL(redirectURI, scope, state string) (string, error) {
+func (provider *OpenPlatform) GetWebAppRedirectURL(redirectURI, scope, state string) (string, error) {
 	urlStr := url.QueryEscape(redirectURI)
 	return fmt.Sprintf(webAppRedirectOauthURL, provider.config.Get("app_id", ""), urlStr, scope, state), nil
 }
 
-//// Redirect OpenPlat
-//func (provider *OpenPlat) Redirect(writer http.ResponseWriter, req *http.Request, redirectURI, scope, state string) error {
+//// Redirect OpenPlatform
+//func (provider *OpenPlatform) Redirect(writer http.ResponseWriter, req *http.Request, redirectURI, scope, state string) error {
 //	location, err := provider.GetRedirectURL(redirectURI, scope, state)
 //	if err != nil {
 //		return err
@@ -68,7 +72,7 @@ type ResAccessToken struct {
 }
 
 // GetUserAccessToken 通过网页授权的code 换取access_token(区别于context中的access_token)
-func (provider *OpenPlat) GetUserAccessToken(code string) (result ResAccessToken, err error) {
+func (provider *OpenPlatform) GetUserAccessToken(code string) (result ResAccessToken, err error) {
 	urlStr := fmt.Sprintf(accessTokenURL, provider.config.Get("app_id", ""), provider.config.Get("app_secret", ""), code)
 	provider.GetHttpClient().PerformRequest(urlStr, "GET", nil, false, nil, &result)
 	if result.ErrCode != 0 {
@@ -79,7 +83,7 @@ func (provider *OpenPlat) GetUserAccessToken(code string) (result ResAccessToken
 }
 
 // RefreshAccessToken 刷新access_token
-func (provider *OpenPlat) RefreshAccessToken(refreshToken string) (result ResAccessToken, err error) {
+func (provider *OpenPlatform) RefreshAccessToken(refreshToken string) (result ResAccessToken, err error) {
 	urlStr := fmt.Sprintf(refreshAccessTokenURL, provider.config.Get("app_id", ""), refreshToken)
 	provider.GetHttpClient().PerformRequest(urlStr, "GET", nil, false, nil, &result)
 	if result.ErrCode != 0 {
@@ -89,7 +93,7 @@ func (provider *OpenPlat) RefreshAccessToken(refreshToken string) (result ResAcc
 	return
 }
 
-func (provider *OpenPlat) CheckAccessToken(accessToken, openID string) (b bool, err error) {
+func (provider *OpenPlatform) CheckAccessToken(accessToken, openID string) (b bool, err error) {
 	urlStr := fmt.Sprintf(checkAccessTokenURL, accessToken, openID)
 	var result CommonError
 	provider.GetHttpClient().PerformRequest(urlStr, "GET", nil, false, nil, &result)
@@ -118,7 +122,7 @@ type UserInfo struct {
 }
 
 // GetUserInfo 如果scope为 snsapi_userinfo 则可以通过此方法获取到用户基本信息
-func (provider *OpenPlat) GetUserInfo(accessToken, openID, lang string) (result UserInfo, err error) {
+func (provider *OpenPlatform) GetUserInfo(accessToken, openID, lang string) (result UserInfo, err error) {
 	if lang == "" {
 		lang = "zh_CN"
 	}

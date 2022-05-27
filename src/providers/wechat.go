@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"github.com/ArtisanCloud/PowerLibs/http/contract"
 	"github.com/ArtisanCloud/PowerLibs/object"
-	"github.com/ArtisanCloud/PowerSocialite/src/contracts"
+	"io/ioutil"
 	"reflect"
 	"time"
 )
@@ -31,7 +31,12 @@ func NewWeChat(config *object.HashMap) *WeChat {
 		withCountryCode: false,
 	}
 
-	wechat.OverrideGetAccessToken()
+	wechatConfig := wechat.GetConfig()
+	if wechatConfig.Has("component") {
+		wechat.PrepareForComponent(wechatConfig.Get("component", &object.HashMap{}).(*object.HashMap))
+	}
+
+	wechat.OverrideTokenFromCode()
 	wechat.OverrideGetAuthURL()
 	wechat.OverrideBuildAuthURLFromBase()
 	wechat.OverrideGetCodeFields()
@@ -43,9 +48,13 @@ func NewWeChat(config *object.HashMap) *WeChat {
 	return wechat
 }
 
-func (provider *WeChat) WithOpenID(openid string) *WeChat {
+func (provider *WeChat) GetName() string {
+	return "wechat"
+}
 
-	provider.openID = openid
+func (provider *WeChat) WithOpenID(openID string) *WeChat {
+
+	provider.openID = openID
 	return provider
 }
 
@@ -55,22 +64,15 @@ func (provider *WeChat) WithCountryCode() *WeChat {
 	return provider
 }
 
-func (provider *WeChat) TokenFromCode(code string) (*object.HashMap, error) {
-	response, err := provider.GetTokenFromCode(code)
-	if err != nil {
-		return nil, err
+func (provider *WeChat) OverrideTokenFromCode() {
+	provider.TokenFromCode = func(code string) (*object.HashMap, error) {
+		response, err := provider.GetTokenFromCode(code)
+		if err != nil {
+			return nil, err
+		}
+
+		return provider.normalizeAccessTokenResponse(response)
 	}
-
-	return provider.normalizeAccessTokenResponse(response)
-}
-
-func (provider *WeChat) GetTokenFromCode(code string) (contract.ResponseInterface, error) {
-	return provider.GetHttpClient().PerformRequest(provider.GetTokenURL(), "GET", &object.HashMap{
-		"headers": object.StringMap{
-			"Accept": "application/json",
-		},
-		"query": provider.getTokenFields(code),
-	}, false, nil, nil)
 }
 
 func (provider *WeChat) WithComponent(component *object.HashMap) *WeChat {
@@ -80,53 +82,9 @@ func (provider *WeChat) WithComponent(component *object.HashMap) *WeChat {
 	return provider
 }
 
-func (provider *WeChat) PrepareForComponent(component *object.HashMap) error {
-	config := object.HashMap{}
-	for k, v := range *component {
-		value := v
-		if reflect.TypeOf(v).Kind() == reflect.Func {
-			value = reflect.ValueOf(v)
-		}
-		switch k {
-		case "id":
-		case "app_id":
-		case "component_app_id":
-			config["id"] = value
-			break
-		case "token":
-		case "app_token":
-		case "access_token":
-		case "component_access_token":
-			config["token"] = value
-			break
-		}
-	}
+func (provider *WeChat) GetComponent() *object.HashMap {
 
-	if len(config) == 2 {
-		return errors.New("Please check your config arguments is available.")
-	}
-
-	if len(provider.scopes) == 1 && object.InArray("snsapi_login", provider.scopes) {
-		provider.scopes = []string{"snsapi_base"}
-	}
-
-	provider.component = &config
-
-	return nil
-}
-
-func (provider *WeChat) OverrideGetAccessToken() {
-	provider.GetAccessToken = func(code string) (contracts.AccessTokenInterface, error) {
-		response, err := provider.GetHttpClient().PerformRequest(provider.GetTokenURL(), "GET", &object.HashMap{
-			"headers": object.StringMap{"Accept": "application/json"},
-			"query":   provider.GetTokenFields(code),
-		}, false, nil, nil)
-
-		if err != nil {
-			return nil, err
-		}
-		return provider.parseAccessToken(response.GetBody())
-	}
+	return provider.component
 }
 
 func (provider *WeChat) OverrideGetAuthURL() {
@@ -143,6 +101,7 @@ func (provider *WeChat) OverrideGetAuthURL() {
 		return provider.BuildAuthURLFromBase(fmt.Sprintf("https://open.weixin.qq.com/connect/%s", path)), nil
 	}
 }
+
 func (provider *WeChat) OverrideBuildAuthURLFromBase() {
 
 	provider.BuildAuthURLFromBase = func(url string) string {
@@ -192,6 +151,50 @@ func (provider *WeChat) OverrideGetTokenURL() {
 	}
 }
 
+func (provider *WeChat) UserFromCode(code string) (*User, error) {
+	if object.InArray("snsapi_login", provider.scopes) {
+		tokenResponse, err := provider.GetTokenFromCode(code)
+		if err != nil {
+			return nil, err
+		}
+		bodyBuffer, err := ioutil.ReadAll(tokenResponse.GetBody())
+		if err != nil {
+			return nil, err
+		}
+		mapToken := &object.HashMap{}
+		err = object.JsonDecode(bodyBuffer, mapToken)
+
+		user := provider.MapUserToObject(mapToken)
+		if user.GetString("id", "") == "" {
+			return nil, errors.New((*mapToken)["errmsg"].(string))
+		}
+		return user, err
+	}
+
+	tokenResponse, err := provider.TokenFromCode(code)
+
+	provider.WithOpenID((*tokenResponse)["openid"].(string))
+
+	user, err := provider.UserFromToken((*tokenResponse)[provider.accessTokenKey].(string))
+	if err != nil {
+		return nil, err
+	}
+
+	refreshTokenKey := ""
+	if (*tokenResponse)[provider.refreshTokenKey] != nil {
+		refreshTokenKey = (*tokenResponse)[provider.refreshTokenKey].(string)
+	}
+
+	expiresInKey := 0
+	if (*tokenResponse)[provider.expiresInKey] != nil {
+		expiresInKey = (*tokenResponse)[provider.expiresInKey].(int)
+	}
+
+	return user.SetRefreshToken(refreshTokenKey).
+		SetExpiresIn(expiresInKey).
+		SetTokenResponse(tokenResponse), nil
+}
+
 func (provider *WeChat) OverrideGetUserByToken() {
 	provider.GetUserByToken = func(token string) (*object.HashMap, error) {
 
@@ -217,16 +220,71 @@ func (provider *WeChat) OverrideMapUserToObject() {
 }
 
 func (provider *WeChat) OverrideGetTokenFields() {
-	provider.GetTokenFields = func(code string) *object.HashMap {
+	provider.GetTokenFields = func(code string) *object.StringMap {
+
+		if provider.component != nil {
+			return &object.StringMap{
+				"appid":                  provider.GetClientID(),
+				"component_appid":        (*provider.component)["id"].(string),
+				"component_access_token": (*provider.component)["token"].(string),
+				"code":                   code,
+				"grant_type":             "authorization_code",
+			}
+		}
 
 		config := provider.GetConfig()
-		return &object.HashMap{
-			"appid":                  config.GetString("client_id", ""),
-			"secret":                 config.GetString("client_secret", ""),
-			"component_appid":        provider.GetClientID(),
-			"component_access_token": (*provider.component)["token"],
-			"code":                   code,
-			"grant_type":             "authorization_code",
+		return &object.StringMap{
+			"appid":      config.GetString("client_id", ""),
+			"secret":     config.GetString("client_secret", ""),
+			"code":       code,
+			"grant_type": "authorization_code",
 		}
 	}
+}
+
+func (provider *WeChat) GetTokenFromCode(code string) (contract.ResponseInterface, error) {
+	outBody := ""
+	rs, err := provider.GetHttpClient().PerformRequest(provider.GetTokenURL(), "GET", &object.HashMap{
+		"headers": &object.HashMap{
+			"Accept": "application/json",
+		},
+		"query": provider.GetTokenFields(code),
+	}, true, nil, &outBody)
+
+	return rs, err
+}
+
+func (provider *WeChat) PrepareForComponent(component *object.HashMap) error {
+	config := object.HashMap{}
+	for k, v := range *component {
+		value := v
+		if reflect.TypeOf(v).Kind() == reflect.Func {
+			value = reflect.ValueOf(v)
+		}
+		switch k {
+		case "id":
+		case "app_id":
+		case "component_app_id":
+			config["id"] = value
+			break
+		case "token":
+		case "app_token":
+		case "access_token":
+		case "component_access_token":
+			config["token"] = value
+			break
+		}
+	}
+
+	if len(config) == 2 {
+		return errors.New("Please check your config arguments is available.")
+	}
+
+	if len(provider.scopes) == 1 && object.InArray("snsapi_login", provider.scopes) {
+		provider.scopes = []string{"snsapi_base"}
+	}
+
+	provider.component = &config
+
+	return nil
 }
