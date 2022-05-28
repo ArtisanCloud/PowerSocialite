@@ -308,22 +308,9 @@ func (provider *WeCom) OverrideGetTokenURL() {
 }
 
 func (provider *WeCom) OverrideGetUserByToken() {
-	provider.GetUserByToken = func(token string) (*object.HashMap, error) {
+	provider.GetUserByToken = func(token string, openID string) (*object.HashMap, error) {
 
 		return nil, errors.New("WeWork doesn't support access_token mode")
-
-		//userInfo, err := provider.GetUserInfo(token)
-		//if err != nil {
-		//  return nil, err
-		//}
-		//
-		//if provider.detailed && (*userInfo)["user_ticket"] != nil {
-		//  return provider.GetUserDetail(token, (*userInfo)["user_ticket"])
-		//}
-		//
-		//provider.detailed = false
-		//
-		//return userInfo, err
 	}
 }
 

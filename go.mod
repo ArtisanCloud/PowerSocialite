@@ -4,7 +4,7 @@ go 1.17
 
 //replace github.com/ArtisanCloud/PowerLibs => ../PowerLibs
 
-require github.com/ArtisanCloud/PowerLibs v1.2.9-0.20220525160519-50eedbfdd394
+require github.com/ArtisanCloud/PowerLibs v1.2.9-0.20220528131942-5012e96532d1
 
 require (
 	github.com/go-playground/locales v0.13.0 // indirect

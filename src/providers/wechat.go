@@ -19,7 +19,6 @@ type WeChat struct {
 	scopes          []string
 	withCountryCode bool
 	component       *object.HashMap
-	openID          string
 }
 
 func NewWeChat(config *object.HashMap) *WeChat {
@@ -50,12 +49,6 @@ func NewWeChat(config *object.HashMap) *WeChat {
 
 func (provider *WeChat) GetName() string {
 	return "wechat"
-}
-
-func (provider *WeChat) WithOpenID(openID string) *WeChat {
-
-	provider.openID = openID
-	return provider
 }
 
 func (provider *WeChat) WithCountryCode() *WeChat {
@@ -173,9 +166,7 @@ func (provider *WeChat) UserFromCode(code string) (*User, error) {
 
 	tokenResponse, err := provider.TokenFromCode(code)
 
-	provider.WithOpenID((*tokenResponse)["openid"].(string))
-
-	user, err := provider.UserFromToken((*tokenResponse)[provider.accessTokenKey].(string))
+	user, err := provider.UserFromToken((*tokenResponse)[provider.accessTokenKey].(string), (*tokenResponse)["openid"].(string))
 	if err != nil {
 		return nil, err
 	}
@@ -195,10 +186,34 @@ func (provider *WeChat) UserFromCode(code string) (*User, error) {
 		SetTokenResponse(tokenResponse), nil
 }
 
+//
 func (provider *WeChat) OverrideGetUserByToken() {
-	provider.GetUserByToken = func(token string) (*object.HashMap, error) {
+	provider.GetUserByToken = func(token string, openID string) (*object.HashMap, error) {
 
-		return nil, errors.New("WeCom doesn't support access_token mode")
+		language := ""
+		if provider.withCountryCode {
+			if (*provider.parameters)["lang"] != "" {
+				language = (*provider.parameters)["lang"]
+			} else {
+				language = "zh_CN"
+			}
+		}
+
+		body := ""
+		response, err := provider.GetHttpClient().PerformRequest(
+			provider.baseURL+"/userinfo", "GET", &object.HashMap{
+				"query": &object.StringMap{
+					"access_token": token,
+					"openid":       openID,
+					"lang":         language,
+				},
+			}, true, nil, &body)
+		if err != nil {
+			return nil, err
+		}
+
+		return provider.ParseBody(response.GetBody())
+
 	}
 }
 

@@ -33,7 +33,7 @@ type Base struct {
 	TokenFromCode        func(code string) (*object.HashMap, error)
 	GetAuthURL           func() (string, error)
 	GetTokenURL          func() string
-	GetUserByToken       func(token string) (*object.HashMap, error)
+	GetUserByToken       func(token string, openID string) (*object.HashMap, error)
 	MapUserToObject      func(user *object.HashMap) *User
 	GetAccessToken       func(token string) (contracts.AccessTokenInterface, error)
 	BuildAuthURLFromBase func(url string) string
@@ -97,7 +97,7 @@ func (base *Base) UserFromCode(code string) (*User, error) {
 		return nil, err
 	}
 
-	user, err := base.UserFromToken((*tokenResponse)[base.accessTokenKey].(string))
+	user, err := base.UserFromToken((*tokenResponse)[base.accessTokenKey].(string), (*tokenResponse)["openid"].(string))
 	if err != nil {
 		return nil, err
 	}
@@ -117,8 +117,8 @@ func (base *Base) UserFromCode(code string) (*User, error) {
 		SetTokenResponse(tokenResponse), nil
 }
 
-func (base *Base) UserFromToken(token string) (*User, error) {
-	user, err := base.GetUserByToken(token)
+func (base *Base) UserFromToken(token string, openID string) (*User, error) {
+	user, err := base.GetUserByToken(token, openID)
 	if err != nil {
 		return nil, err
 	}
@@ -231,7 +231,7 @@ func (base *Base) getTokenFields(code string) *object.StringMap {
 	}
 }
 
-func (base *Base) parseBody(body io.ReadCloser) (*object.HashMap, error) {
+func (base *Base) ParseBody(body io.ReadCloser) (*object.HashMap, error) {
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(body)
 	jsonHashMap := object.HashMap{}
@@ -242,7 +242,7 @@ func (base *Base) parseBody(body io.ReadCloser) (*object.HashMap, error) {
 
 func (base *Base) parseAccessToken(body io.ReadCloser) (accessToken contracts.AccessTokenInterface, err error) {
 
-	jsonHashMap, err := base.parseBody(body)
+	jsonHashMap, err := base.ParseBody(body)
 
 	if err != nil {
 		return nil, err
@@ -274,7 +274,7 @@ func (base *Base) getCodeFields() *object.StringMap {
 
 func (base *Base) normalizeAccessTokenResponse(response contract2.ResponseInterface) (*object.HashMap, error) {
 	// tbd
-	body, err := base.parseBody(response.GetBody())
+	body, err := base.ParseBody(response.GetBody())
 	if err != nil {
 		return nil, err
 	}
