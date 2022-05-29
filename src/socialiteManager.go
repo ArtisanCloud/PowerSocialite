@@ -2,8 +2,9 @@ package src
 
 import (
 	"fmt"
-	"github.com/ArtisanCloud/PowerSocialite/src/models"
-	"github.com/ArtisanCloud/PowerSocialite/src/providers"
+	"github.com/ArtisanCloud/PowerLibs/v2/object"
+	"github.com/ArtisanCloud/PowerSocialite/v2/src/models"
+	"github.com/ArtisanCloud/PowerSocialite/v2/src/providers"
 	"strings"
 )
 

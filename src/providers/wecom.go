@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ArtisanCloud/PowerLibs/v2/object"
-	"github.com/ArtisanCloud/PowerSocialite/src/exceptions"
-	"github.com/ArtisanCloud/PowerSocialite/src/response/weCom"
+	"github.com/ArtisanCloud/PowerSocialite/v2/src/exceptions"
+	"github.com/ArtisanCloud/PowerSocialite/v2/src/response/weCom"
 )
 
 type WeCom struct {

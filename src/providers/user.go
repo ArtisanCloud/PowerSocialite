@@ -3,7 +3,7 @@ package providers
 import (
 	"encoding/json"
 	"github.com/ArtisanCloud/PowerLibs/v2/object"
-	"github.com/ArtisanCloud/PowerSocialite/src/contracts"
+	"github.com/ArtisanCloud/PowerSocialite/v2/src/contracts"
 )
 
 type User struct {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	fmt2 "github.com/ArtisanCloud/PowerLibs/v2/fmt"
 	"github.com/ArtisanCloud/PowerLibs/v2/object"
-	"github.com/ArtisanCloud/PowerSocialite/src/providers"
+	"github.com/ArtisanCloud/PowerSocialite/v2/src/providers"
 )
 
 func main() {

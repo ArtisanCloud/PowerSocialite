@@ -7,9 +7,9 @@ import (
 	contract2 "github.com/ArtisanCloud/PowerLibs/v2/http/contract"
 	"github.com/ArtisanCloud/PowerLibs/v2/http/request"
 	"github.com/ArtisanCloud/PowerLibs/v2/object"
-	"github.com/ArtisanCloud/PowerSocialite/src/configs"
-	"github.com/ArtisanCloud/PowerSocialite/src/contracts"
-	"github.com/ArtisanCloud/PowerSocialite/src/response/weCom"
+	"github.com/ArtisanCloud/PowerSocialite/v2/src/configs"
+	"github.com/ArtisanCloud/PowerSocialite/v2/src/contracts"
+	"github.com/ArtisanCloud/PowerSocialite/v2/src/response/weCom"
 	"io"
 	"strings"
 )
