@@ -4,21 +4,21 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	contract2 "github.com/ArtisanCloud/PowerLibs/http/contract"
-	"github.com/ArtisanCloud/PowerLibs/http/request"
-	"github.com/ArtisanCloud/PowerLibs/object"
-	"github.com/ArtisanCloud/PowerSocialite/src"
-	"github.com/ArtisanCloud/PowerSocialite/src/contracts"
-	"github.com/ArtisanCloud/PowerSocialite/src/response/weCom"
+	contract2 "github.com/ArtisanCloud/PowerLibs/v2/http/contract"
+	"github.com/ArtisanCloud/PowerLibs/v2/http/request"
+	"github.com/ArtisanCloud/PowerLibs/v2/object"
+	"github.com/ArtisanCloud/PowerSocialite/v2/src/configs"
+	"github.com/ArtisanCloud/PowerSocialite/v2/src/contracts"
+	"github.com/ArtisanCloud/PowerSocialite/v2/src/response/weCom"
 	"io"
 	"strings"
 )
 
 type Base struct {
-	src.ProviderInterface
+	ProviderInterface
 
 	state           string
-	config          *src.Config
+	config          *configs.Config
 	redirectURL     string
 	parameters      *object.StringMap
 	scopes          []string
@@ -30,20 +30,21 @@ type Base struct {
 	accessTokenKey  string
 	refreshTokenKey string
 
+	TokenFromCode        func(code string) (*object.HashMap, error)
 	GetAuthURL           func() (string, error)
 	GetTokenURL          func() string
-	GetUserByToken       func(token string) (*object.HashMap, error)
-	MapUserToObject      func(user *object.HashMap) *src.User
+	GetUserByToken       func(token string, openID string) (*object.HashMap, error)
+	MapUserToObject      func(user *object.HashMap) *User
 	GetAccessToken       func(token string) (contracts.AccessTokenInterface, error)
 	BuildAuthURLFromBase func(url string) string
 	GetCodeFields        func() *object.StringMap
-	GetTokenFields       func(code string) *object.HashMap
+	GetTokenFields       func(code string) *object.StringMap
 }
 
 func NewBase(config *object.HashMap) *Base {
 
 	base := &Base{
-		config:          src.NewConfig(config),
+		config:          configs.NewConfig(config),
 		scopes:          []string{},
 		expiresInKey:    "expires_in",
 		accessTokenKey:  "access_token",
@@ -77,6 +78,8 @@ func NewBase(config *object.HashMap) *Base {
 		base.config.Set("redirect", redirectURL)
 	}
 
+	base.OverrideTokenFromCode()
+
 	return base
 }
 
@@ -88,13 +91,13 @@ func (base *Base) Redirect(redirectURL string) (string, error) {
 	return base.GetAuthURL()
 }
 
-func (base *Base) UserFromCode(code string) (*src.User, error) {
-	tokenResponse, err := base.tokenFromCode(code)
+func (base *Base) UserFromCode(code string) (*User, error) {
+	tokenResponse, err := base.TokenFromCode(code)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := base.UserFromToken((*tokenResponse)[base.accessTokenKey].(string))
+	user, err := base.UserFromToken((*tokenResponse)[base.accessTokenKey].(string), (*tokenResponse)["openid"].(string))
 	if err != nil {
 		return nil, err
 	}
@@ -114,8 +117,8 @@ func (base *Base) UserFromCode(code string) (*src.User, error) {
 		SetTokenResponse(tokenResponse), nil
 }
 
-func (base *Base) UserFromToken(token string) (*src.User, error) {
-	user, err := base.GetUserByToken(token)
+func (base *Base) UserFromToken(token string, openID string) (*User, error) {
+	user, err := base.GetUserByToken(token, openID)
 	if err != nil {
 		return nil, err
 	}
@@ -126,28 +129,29 @@ func (base *Base) UserFromToken(token string) (*src.User, error) {
 		SetAccessToken(token), nil
 }
 
-func (base *Base) tokenFromCode(code string) (*object.HashMap, error) {
+func (base *Base) OverrideTokenFromCode() {
+	base.TokenFromCode = func(code string) (*object.HashMap, error) {
+		outResponse := &weCom.ResponseTokenFromCode{}
 
-	outResponse := &weCom.ResponseTokenFromCode{}
-
-	response, err := base.GetHttpClient().PerformRequest(
-		base.GetTokenURL(),
-		"POST",
-		&object.HashMap{
-			"form_params": base.GetTokenFields(code),
-			"headers": &object.StringMap{
-				"Accept": "application/json",
+		response, err := base.GetHttpClient().PerformRequest(
+			base.GetTokenURL(),
+			"POST",
+			&object.HashMap{
+				"form_params": base.GetTokenFields(code),
+				"headers": &object.HashMap{
+					"Accept": "application/json",
+				},
 			},
-		},
-		false, nil,
-		outResponse,
-	)
+			false, nil,
+			outResponse,
+		)
 
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
+
+		return base.normalizeAccessTokenResponse(response)
 	}
-
-	return base.normalizeAccessTokenResponse(response)
 }
 
 func (base *Base) refreshToken(refreshToken string) error {
@@ -155,13 +159,13 @@ func (base *Base) refreshToken(refreshToken string) error {
 
 }
 
-func (base *Base) WithRedirectURL(redirectURL string) src.ProviderInterface {
+func (base *Base) WithRedirectURL(redirectURL string) ProviderInterface {
 	base.redirectURL = redirectURL
 
 	return base
 }
 
-func (base *Base) WithState(state string) src.ProviderInterface {
+func (base *Base) WithState(state string) ProviderInterface {
 	base.state = state
 
 	return base
@@ -179,7 +183,7 @@ func (base *Base) With(parameters *object.StringMap) *Base {
 	return base
 }
 
-func (base *Base) GetConfig() *src.Config {
+func (base *Base) GetConfig() *configs.Config {
 	return base.config
 }
 
@@ -218,8 +222,8 @@ func (base *Base) formatScopes(scopes []string, scopeSeparator string) string {
 	return strings.Join(scopes, scopeSeparator)
 }
 
-func (base *Base) getTokenFields(code string) *object.HashMap {
-	return &object.HashMap{
+func (base *Base) getTokenFields(code string) *object.StringMap {
+	return &object.StringMap{
 		"client_id":     base.GetClientID(),
 		"client_secret": base.GetClientSecret(),
 		"code":          code,
@@ -227,7 +231,7 @@ func (base *Base) getTokenFields(code string) *object.HashMap {
 	}
 }
 
-func (base *Base) parseBody(body io.ReadCloser) (*object.HashMap, error) {
+func (base *Base) ParseBody(body io.ReadCloser) (*object.HashMap, error) {
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(body)
 	jsonHashMap := object.HashMap{}
@@ -238,12 +242,12 @@ func (base *Base) parseBody(body io.ReadCloser) (*object.HashMap, error) {
 
 func (base *Base) parseAccessToken(body io.ReadCloser) (accessToken contracts.AccessTokenInterface, err error) {
 
-	jsonHashMap, err := base.parseBody(body)
+	jsonHashMap, err := base.ParseBody(body)
 
 	if err != nil {
 		return nil, err
 	}
-	return src.NewAccessToken(jsonHashMap)
+	return NewAccessToken(jsonHashMap)
 }
 
 func (base *Base) buildAuthURLFromBase(url string) string {
@@ -270,7 +274,7 @@ func (base *Base) getCodeFields() *object.StringMap {
 
 func (base *Base) normalizeAccessTokenResponse(response contract2.ResponseInterface) (*object.HashMap, error) {
 	// tbd
-	body, err := base.parseBody(response.GetBody())
+	body, err := base.ParseBody(response.GetBody())
 	if err != nil {
 		return nil, err
 	}

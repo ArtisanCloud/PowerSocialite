@@ -3,10 +3,9 @@ package providers
 import (
 	"errors"
 	"fmt"
-	"github.com/ArtisanCloud/PowerLibs/object"
-	"github.com/ArtisanCloud/PowerSocialite/src"
-	"github.com/ArtisanCloud/PowerSocialite/src/exceptions"
-	"github.com/ArtisanCloud/PowerSocialite/src/response/weCom"
+	"github.com/ArtisanCloud/PowerLibs/v2/object"
+	"github.com/ArtisanCloud/PowerSocialite/v2/src/exceptions"
+	"github.com/ArtisanCloud/PowerSocialite/v2/src/response/weCom"
 )
 
 type WeCom struct {
@@ -41,6 +40,10 @@ func NewWeCom(config *object.HashMap) *WeCom {
 	return wecom
 }
 
+func (provider *WeCom) GetName() string {
+	return "wecom"
+}
+
 func (provider *WeCom) SetAgentID(agentId int) *WeCom {
 	provider.agentId = agentId
 
@@ -56,7 +59,7 @@ func (provider *WeCom) GetBaseURL() string {
 	return provider.baseUrl
 }
 
-func (provider *WeCom) UserFromCode(code string) (*src.User, error) {
+func (provider *WeCom) UserFromCode(code string) (*User, error) {
 	token, err := provider.GetAPIAccessToken()
 	if err != nil {
 		return nil, err
@@ -67,7 +70,7 @@ func (provider *WeCom) UserFromCode(code string) (*src.User, error) {
 		return nil, err
 	}
 	var (
-		user       *src.User
+		user       *User
 		userDetail *weCom.ResponseGetUserByID
 	)
 
@@ -138,7 +141,7 @@ func (provider *WeCom) GetQrConnectURL() (string, error) {
 	return strQueries, nil
 }
 
-func (provider *WeCom) ContactFromCode(code string) (*src.User, error) {
+func (provider *WeCom) ContactFromCode(code string) (*User, error) {
 	token, err := provider.GetAPIAccessToken()
 	if err != nil {
 		return nil, err
@@ -149,7 +152,7 @@ func (provider *WeCom) ContactFromCode(code string) (*src.User, error) {
 		return nil, err
 	}
 	var (
-		user       *src.User
+		user       *User
 		userDetail *weCom.ResponseGetUserByID
 	)
 
@@ -273,14 +276,14 @@ func (provider *WeCom) requestApiAccessToken() (string, error) {
 
 }
 
-func (provider *WeCom) IdentifyUserAsEmployee(user *src.User) (userID string) {
+func (provider *WeCom) IdentifyUserAsEmployee(user *User) (userID string) {
 	userID = user.GetAttribute("userID", "").(string)
 
 	return userID
 
 }
 
-func (provider *WeCom) IdentifyUserAsContact(user *src.User) (openID string) {
+func (provider *WeCom) IdentifyUserAsContact(user *User) (openID string) {
 	openID = user.GetAttribute("openID", "").(string)
 
 	return openID
@@ -305,22 +308,9 @@ func (provider *WeCom) OverrideGetTokenURL() {
 }
 
 func (provider *WeCom) OverrideGetUserByToken() {
-	provider.GetUserByToken = func(token string) (*object.HashMap, error) {
+	provider.GetUserByToken = func(token string, openID string) (*object.HashMap, error) {
 
 		return nil, errors.New("WeWork doesn't support access_token mode")
-
-		//userInfo, err := provider.GetUserInfo(token)
-		//if err != nil {
-		//  return nil, err
-		//}
-		//
-		//if provider.detailed && (*userInfo)["user_ticket"] != nil {
-		//  return provider.GetUserDetail(token, (*userInfo)["user_ticket"])
-		//}
-		//
-		//provider.detailed = false
-		//
-		//return userInfo, err
 	}
 }
 
@@ -358,13 +348,13 @@ func (provider *WeCom) OverrideGetUserByToken() {
 
 func (provider *WeCom) OverrideMapUserToObject() {
 
-	provider.MapUserToObject = func(user *object.HashMap) *src.User {
+	provider.MapUserToObject = func(user *object.HashMap) *User {
 
 		collectionUser := object.NewCollection(user)
 
 		if provider.detailed {
 			// weCom.ResponseGetUserByID is detail response
-			return src.NewUser(&object.HashMap{
+			return NewUser(&object.HashMap{
 				"id":     collectionUser.Get("userid", ""),
 				"name":   collectionUser.Get("name", ""),
 				"avatar": collectionUser.Get("avatar", ""),
@@ -374,7 +364,7 @@ func (provider *WeCom) OverrideMapUserToObject() {
 
 		// weCom.ResponseGetUserInfo is response from code to user
 
-		return src.NewUser(&object.HashMap{
+		return NewUser(&object.HashMap{
 			"id": collectionUser.Get("UserId", collectionUser.Get("OpenId", "")),
 			//"userId":   collectionUser.Get("UserId", ""),
 			//"openid":   collectionUser.Get("OpenId", ""),
@@ -383,19 +373,19 @@ func (provider *WeCom) OverrideMapUserToObject() {
 	}
 }
 
-func (provider *WeCom) MapUserToEmployee(user *object.HashMap) *src.User {
+func (provider *WeCom) MapUserToEmployee(user *object.HashMap) *User {
 	return provider.MapUserToObject(user)
 }
 
-func (provider *WeCom) MapUserToContact(userData interface{}) *src.User {
+func (provider *WeCom) MapUserToContact(userData interface{}) *User {
 
 	if provider.detailed {
 		MapUser, _ := object.StructToHashMap(userData)
-		return src.NewUser(MapUser, provider)
+		return NewUser(MapUser, provider)
 	}
 
 	userInfo := userData.(*weCom.ResponseGetUserInfo)
-	return src.NewUser(&object.HashMap{
+	return NewUser(&object.HashMap{
 		"userID":         userInfo.UserID,
 		"deviceID":       userInfo.DeviceID,
 		"openID":         userInfo.OpenID,
