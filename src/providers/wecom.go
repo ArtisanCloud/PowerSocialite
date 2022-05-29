@@ -3,7 +3,7 @@ package providers
 import (
 	"errors"
 	"fmt"
-	"github.com/ArtisanCloud/PowerLibs/object"
+	"github.com/ArtisanCloud/PowerLibs/v2/object"
 	"github.com/ArtisanCloud/PowerSocialite/src/exceptions"
 	"github.com/ArtisanCloud/PowerSocialite/src/response/weCom"
 )

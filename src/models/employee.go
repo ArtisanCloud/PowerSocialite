@@ -1,6 +1,6 @@
 package models
 
-import "github.com/ArtisanCloud/PowerLibs/object"
+import "github.com/ArtisanCloud/PowerLibs/v2/object"
 
 type Employee struct {
 	Alias           string          `json:"alias"`

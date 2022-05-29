@@ -2,7 +2,6 @@ package src
 
 import (
 	"fmt"
-	"github.com/ArtisanCloud/PowerLibs/object"
 	"github.com/ArtisanCloud/PowerSocialite/src/models"
 	"github.com/ArtisanCloud/PowerSocialite/src/providers"
 	"strings"

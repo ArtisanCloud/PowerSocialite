@@ -2,7 +2,7 @@ package providers
 
 import (
 	"encoding/json"
-	"github.com/ArtisanCloud/PowerLibs/object"
+	"github.com/ArtisanCloud/PowerLibs/v2/object"
 	"github.com/ArtisanCloud/PowerSocialite/src/contracts"
 )
 
@@ -122,7 +122,7 @@ func (user *User) SetRaw(u object.HashMap) *User {
 }
 func (user *User) GetRaw() *object.HashMap {
 	if user.GetAttribute("raw", nil) != nil {
-		raw:=user.GetAttribute("raw", nil).(object.HashMap)
+		raw := user.GetAttribute("raw", nil).(object.HashMap)
 		return &raw
 	}
 	return nil

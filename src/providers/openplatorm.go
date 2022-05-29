@@ -2,9 +2,8 @@ package providers
 
 import (
 	"fmt"
+	"github.com/ArtisanCloud/PowerLibs/v2/object"
 	"net/url"
-
-	"github.com/ArtisanCloud/PowerLibs/object"
 )
 
 const (

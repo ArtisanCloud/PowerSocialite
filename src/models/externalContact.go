@@ -1,8 +1,6 @@
 package models
 
-import (
-	"github.com/ArtisanCloud/PowerLibs/object"
-)
+import "github.com/ArtisanCloud/PowerLibs/v2/object"
 
 // https://open.work.weixin.qq.com/api/doc/90000/90135/92114
 

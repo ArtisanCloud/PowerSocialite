@@ -2,7 +2,7 @@ package providers
 
 import (
 	"errors"
-	"github.com/ArtisanCloud/PowerLibs/object"
+	"github.com/ArtisanCloud/PowerLibs/v2/object"
 	"github.com/ArtisanCloud/PowerSocialite/src/contracts"
 )
 
@@ -24,21 +24,18 @@ func NewAccessToken(attributes *object.HashMap) (*AccessToken, error) {
 
 }
 
-func (accessToken *AccessToken)GetToken() string {
-	return accessToken.GetString("access_token","")
+func (accessToken *AccessToken) GetToken() string {
+	return accessToken.GetString("access_token", "")
 }
 
-
-func (accessToken *AccessToken)GetRefreshToken() string {
-	return accessToken.GetString("refresh_token","")
+func (accessToken *AccessToken) GetRefreshToken() string {
+	return accessToken.GetString("refresh_token", "")
 }
 
-
-func (accessToken *AccessToken)SetRefreshToken(token string) {
-	accessToken.SetAttribute("refresh_token",token)
+func (accessToken *AccessToken) SetRefreshToken(token string) {
+	accessToken.SetAttribute("refresh_token", token)
 }
 
-
-func (accessToken *AccessToken)JsonSerialize() string {
+func (accessToken *AccessToken) JsonSerialize() string {
 	return accessToken.GetToken()
 }
