@@ -1,8 +1,33 @@
 package models
 
-import "github.com/ArtisanCloud/PowerLibs/v2/object"
-
 // https://open.work.weixin.qq.com/api/doc/90000/90135/92114
+
+type Text struct {
+	Value string `json:"value"`
+}
+
+type MiniProgram struct {
+	AppID    string `json:"appid"`
+	PagePath string `json:"pagepath"`
+	Title    string `json:"title"`
+}
+
+type Web struct {
+	URL   string `json:"url"`
+	Title string `json:"title"`
+}
+
+type ExternalAttr struct {
+	Type        int          `json:"type"`
+	Name        string       `json:"name"`
+	Text        *Text        `json:"text,omitempty"`
+	Web         *Web         `json:"web,omitempty"`
+	MiniProgram *MiniProgram `json:"miniprogram,omitempty"`
+}
+
+type ExternalProfile struct {
+	ExternalAttr []*ExternalAttr `json:"external_attr"`
+}
 
 type ExternalContact struct {
 	ExternalUserID   string           `json:"external_userid"` // woAJ2GCAAAXtWyujaWJHDDGi0mACHAAA",
@@ -16,10 +41,6 @@ type ExternalContact struct {
 	UnionID          string           `json:"unionid"`         // ozynqsulJFCZ2z1aYeS8h-nuasdAAA",
 	ExternalProfiles *ExternalProfile `json:"external_profile"`
 	FollowUsers      *FollowUser      `json:"follow_user"`
-}
-
-type ExternalProfile struct {
-	ExternalAttr map[string]*object.Collection `json:"external_attr"`
 }
 
 type FollowUser struct {
