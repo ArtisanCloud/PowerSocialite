@@ -200,7 +200,11 @@ func (provider *WeChat) OverrideGetUserByToken() {
 		}
 
 		body := ""
-		response, err := provider.GetHttpClient().PerformRequest(
+		client, err := provider.GetHttpClient()
+		if err != nil {
+			return nil, err
+		}
+		response, err := client.PerformRequest(
 			provider.baseURL+"/userinfo", "GET", &object.HashMap{
 				"query": &object.StringMap{
 					"access_token": token,
@@ -259,7 +263,11 @@ func (provider *WeChat) OverrideGetTokenFields() {
 
 func (provider *WeChat) GetTokenFromCode(code string) (contract.ResponseInterface, error) {
 	outBody := ""
-	rs, err := provider.GetHttpClient().PerformRequest(provider.GetTokenURL(), "GET", &object.HashMap{
+	client, err := provider.GetHttpClient()
+	if err != nil {
+		return nil, err
+	}
+	rs, err := client.PerformRequest(provider.GetTokenURL(), "GET", &object.HashMap{
 		"headers": &object.HashMap{
 			"Accept": "application/json",
 		},

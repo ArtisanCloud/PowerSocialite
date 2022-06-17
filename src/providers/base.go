@@ -132,8 +132,11 @@ func (base *Base) UserFromToken(token string, openID string) (*User, error) {
 func (base *Base) OverrideTokenFromCode() {
 	base.TokenFromCode = func(code string) (*object.HashMap, error) {
 		outResponse := &weCom.ResponseTokenFromCode{}
-
-		response, err := base.GetHttpClient().PerformRequest(
+		client, err := base.GetHttpClient()
+		if err != nil {
+			return nil, err
+		}
+		response, err := client.PerformRequest(
 			base.GetTokenURL(),
 			"POST",
 			&object.HashMap{
@@ -209,9 +212,9 @@ func (base *Base) GetClientSecret() string {
 	return result
 }
 
-func (base *Base) GetHttpClient() *request.HttpRequest {
+func (base *Base) GetHttpClient() (*request.HttpRequest, error) {
 	if base.httpClient != nil {
-		return base.httpClient
+		return base.httpClient, nil
 	} else {
 		return request.NewHttpRequest(base.config.All())
 	}

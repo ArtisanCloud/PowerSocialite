@@ -73,7 +73,11 @@ type ResAccessToken struct {
 // GetUserAccessToken 通过网页授权的code 换取access_token(区别于context中的access_token)
 func (provider *OpenPlatform) GetUserAccessToken(code string) (result ResAccessToken, err error) {
 	urlStr := fmt.Sprintf(accessTokenURL, provider.config.Get("app_id", ""), provider.config.Get("app_secret", ""), code)
-	provider.GetHttpClient().PerformRequest(urlStr, "GET", nil, false, nil, &result)
+	client, err := provider.GetHttpClient()
+	if err != nil {
+		return result, err
+	}
+	client.PerformRequest(urlStr, "GET", nil, false, nil, &result)
 	if result.ErrCode != 0 {
 		err = fmt.Errorf("GetUserAccessToken error : errcode=%v , errmsg=%v", result.ErrCode, result.ErrMsg)
 		return
@@ -84,7 +88,11 @@ func (provider *OpenPlatform) GetUserAccessToken(code string) (result ResAccessT
 // RefreshAccessToken 刷新access_token
 func (provider *OpenPlatform) RefreshAccessToken(refreshToken string) (result ResAccessToken, err error) {
 	urlStr := fmt.Sprintf(refreshAccessTokenURL, provider.config.Get("app_id", ""), refreshToken)
-	provider.GetHttpClient().PerformRequest(urlStr, "GET", nil, false, nil, &result)
+	client, err := provider.GetHttpClient()
+	if err != nil {
+		return result, err
+	}
+	client.PerformRequest(urlStr, "GET", nil, false, nil, &result)
 	if result.ErrCode != 0 {
 		err = fmt.Errorf("RefreshAccessToken error : errcode=%v , errmsg=%v", result.ErrCode, result.ErrMsg)
 		return
@@ -95,7 +103,11 @@ func (provider *OpenPlatform) RefreshAccessToken(refreshToken string) (result Re
 func (provider *OpenPlatform) CheckAccessToken(accessToken, openID string) (b bool, err error) {
 	urlStr := fmt.Sprintf(checkAccessTokenURL, accessToken, openID)
 	var result CommonError
-	provider.GetHttpClient().PerformRequest(urlStr, "GET", nil, false, nil, &result)
+	client, err := provider.GetHttpClient()
+	if err != nil {
+		return false, err
+	}
+	client.PerformRequest(urlStr, "GET", nil, false, nil, &result)
 
 	if result.ErrCode != 0 {
 		b = false
@@ -126,7 +138,11 @@ func (provider *OpenPlatform) GetUserInfo(accessToken, openID, lang string) (res
 		lang = "zh_CN"
 	}
 	urlStr := fmt.Sprintf(userInfoURL, accessToken, openID, lang)
-	provider.GetHttpClient().PerformRequest(urlStr, "GET", nil, false, nil, &result)
+	client, err := provider.GetHttpClient()
+	if err != nil {
+		return result, err
+	}
+	client.PerformRequest(urlStr, "GET", nil, false, nil, &result)
 	if result.ErrCode != 0 {
 		err = fmt.Errorf("GetUserInfo error : errcode=%v , errmsg=%v", result.ErrCode, result.ErrMsg)
 		return
