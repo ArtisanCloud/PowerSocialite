@@ -2,9 +2,9 @@ module github.com/ArtisanCloud/PowerSocialite/v2
 
 go 1.17
 
-//replace github.com/ArtisanCloud/PowerLibs => ../PowerLibs
+//replace github.com/ArtisanCloud/PowerLibs/v2 => ../PowerLibs
 
-require github.com/ArtisanCloud/PowerLibs/v2 v2.0.2
+require github.com/ArtisanCloud/PowerLibs/v2 v2.0.6
 
 require (
 	github.com/go-playground/locales v0.13.0 // indirect
@@ -16,7 +16,7 @@ require (
 	github.com/leodido/go-urn v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	golang.org/x/crypto v0.0.0-20210314154223-e6e6c4f2bb5b // indirect
+	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2 // indirect
 	golang.org/x/net v0.0.0-20210726213435-c6fcb2dbf985 // indirect
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect

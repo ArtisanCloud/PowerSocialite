@@ -182,7 +182,11 @@ func (provider *WeCom) GetAPIAccessToken() (result string, err error) {
 func (provider *WeCom) GetUser(token string, code string) (*weCom.ResponseGetUserInfo, error) {
 
 	outResponse := &weCom.ResponseGetUserInfo{}
-	provider.GetHttpClient().PerformRequest(
+	client, err := provider.GetHttpClient()
+	if err != nil {
+		return nil, err
+	}
+	client.PerformRequest(
 		"https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo",
 		"GET",
 		&object.HashMap{
@@ -213,7 +217,11 @@ func (provider *WeCom) GetUserByID(userID string) (*weCom.ResponseGetUserByID, e
 	if err != nil {
 		return nil, err
 	}
-	provider.GetHttpClient().PerformRequest(
+	client, err := provider.GetHttpClient()
+	if err != nil {
+		return nil, err
+	}
+	client.PerformRequest(
 		"https://qyapi.weixin.qq.com/cgi-bin/user/get",
 		"POST",
 		&object.HashMap{
@@ -252,8 +260,11 @@ func (provider *WeCom) requestApiAccessToken() (string, error) {
 	if pCorpSecret != nil && pCorpSecret.(string) != "" {
 		corpSecret = pCorpSecret.(string)
 	}
-
-	provider.GetHttpClient().PerformRequest(
+	client, err := provider.GetHttpClient()
+	if err != nil {
+		return "", err
+	}
+	client.PerformRequest(
 		"https://qyapi.weixin.qq.com/cgi-bin/gettoken",
 		"GET",
 		&object.HashMap{
