@@ -30,7 +30,7 @@ type ExternalProfile struct {
 }
 
 type ExternalContact struct {
-	ExternalUserid  string           `json:"external_userid"`
+	ExternalUserID  string           `json:"external_userid"`
 	Name            string           `json:"name"`
 	Position        string           `json:"position"`
 	Avatar          string           `json:"avatar"`
@@ -48,7 +48,7 @@ type WechatChannel struct {
 }
 
 type FollowUser struct {
-	Userid         string         `json:"userid"`
+	UserID         string         `json:"userid"`
 	Remark         string         `json:"remark"`
 	Description    string         `json:"description"`
 	CreateTime     int            `json:"createtime"`
