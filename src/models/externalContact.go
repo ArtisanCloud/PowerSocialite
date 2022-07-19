@@ -52,6 +52,7 @@ type FollowUser struct {
 	Remark         string         `json:"remark"`
 	Description    string         `json:"description"`
 	CreateTime     int            `json:"createtime"`
+	TagIDs         []string       `json:"tag_id,omitempty"`
 	Tags           []Tag          `json:"tags,omitempty"`
 	RemarkCorpName string         `json:"remark_corp_name,omitempty"`
 	RemarkMobiles  []string       `json:"remark_mobiles,omitempty"`
