@@ -325,37 +325,50 @@ func (provider *WeCom) OverrideGetUserByToken() {
 	}
 }
 
-//func (provider *WeCom) GetUserInfo(token string) (*object.HashMap, error) {
-//  rs, err := provider.GetHttpClient().PerformRequest("https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo", "GET", &object.HashMap{
-//    "query": object.HashMap{
-//      "access_token": token,
-//      "code":         code,
-//    },
-//  }, false, nil, nil)
-//
-//  if err != nil {
-//    return nil, err
-//  }
-//
-//  return provider.parseBody(rs.GetBody())
-//}
+// 获取访问用户身份
+// https://developer.work.weixin.qq.com/document/path/91023
+func (provider *WeCom) GetUserInfo(code string) (*weCom.ResponseGetUserInfo, error) {
 
-//func (provider *WeCom) GetUserDetail(token string, ticket interface{}) (*object.HashMap, error) {
-//  rs, err := provider.GetHttpClient().PerformRequest("https://qyapi.weixin.qq.com/cgi-bin/user/getuserdetail", "POST", &object.HashMap{
-//    "query": object.HashMap{
-//      "access_token": token,
-//    },
-//    "json": object.HashMap{
-//      "user_ticket": ticket,
-//    },
-//  }, false, nil, nil)
-//
-//  if err != nil {
-//    return nil, err
-//  }
-//
-//  return provider.parseBody(rs.GetBody())
-//}
+	result := &weCom.ResponseGetUserInfo{}
+
+	params := &object.StringMap{
+		"code": code,
+	}
+
+	client, err := provider.GetHttpClient()
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = client.PerformRequest("cgi-bin/user/getuserinfo", "GET", &object.HashMap{
+		"query": params,
+	}, false, nil, result)
+
+	return result, err
+}
+
+// 获取访问用户敏感信息
+// https://developer.work.weixin.qq.com/document/path/95833
+func (provider *WeCom) GetUserDetail(userTicket string) (*weCom.ResponseGetUserDetail, error) {
+
+	result := &weCom.ResponseGetUserDetail{}
+
+	params := &object.HashMap{
+		"user_ticket": userTicket,
+	}
+
+	client, err := provider.GetHttpClient()
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = client.PerformRequest("cgi-bin/user/getuserdetail", "POST",
+		&object.HashMap{
+			"body": params,
+		}, false, nil, result)
+
+	return result, err
+}
 
 func (provider *WeCom) OverrideMapUserToObject() {
 
