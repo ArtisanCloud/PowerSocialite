@@ -331,8 +331,13 @@ func (provider *WeCom) GetUserInfo(code string) (*weCom.ResponseGetUserInfo, err
 
 	result := &weCom.ResponseGetUserInfo{}
 
-	params := &object.StringMap{
-		"code": code,
+	strAPIAccessToken, err := provider.GetAPIAccessToken()
+	if err != nil {
+		return nil, err
+	}
+	query := &object.StringMap{
+		"access_token": strAPIAccessToken,
+		"code":         code,
 	}
 
 	client, err := provider.GetHttpClient()
@@ -341,7 +346,7 @@ func (provider *WeCom) GetUserInfo(code string) (*weCom.ResponseGetUserInfo, err
 	}
 
 	_, err = client.PerformRequest("cgi-bin/user/getuserinfo", "GET", &object.HashMap{
-		"query": params,
+		"query": query,
 	}, false, nil, result)
 
 	return result, err
@@ -352,9 +357,16 @@ func (provider *WeCom) GetUserInfo(code string) (*weCom.ResponseGetUserInfo, err
 func (provider *WeCom) GetUserDetail(userTicket string) (*weCom.ResponseGetUserDetail, error) {
 
 	result := &weCom.ResponseGetUserDetail{}
+	strAPIAccessToken, err := provider.GetAPIAccessToken()
+	if err != nil {
+		return nil, err
+	}
 
 	params := &object.HashMap{
 		"user_ticket": userTicket,
+	}
+	query := &object.StringMap{
+		"access_token": strAPIAccessToken,
 	}
 
 	client, err := provider.GetHttpClient()
@@ -364,7 +376,8 @@ func (provider *WeCom) GetUserDetail(userTicket string) (*weCom.ResponseGetUserD
 
 	_, err = client.PerformRequest("cgi-bin/user/getuserdetail", "POST",
 		&object.HashMap{
-			"body": params,
+			"form_params": params,
+			"query":       query,
 		}, false, nil, result)
 
 	return result, err
