@@ -304,7 +304,8 @@ func (provider *WeCom) IdentifyUserAsContact(user *User) (openID string) {
 func (provider *WeCom) OverrideGetAuthURL() {
 	provider.GetAuthURL = func() (string, error) {
 		// 网页授权登录
-		if provider.agentId <= 0 {
+		if provider.agentId <= 0 ||
+			(provider.agentId >= 0 && object.InArray("snsapi_privateinfo", provider.scopes)) {
 			return provider.GetOAuthURL(), nil
 		}
 
