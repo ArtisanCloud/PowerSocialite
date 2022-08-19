@@ -116,6 +116,10 @@ func (provider *WeCom) GetOAuthURL() string {
 		"scope":         provider.formatScopes(provider.scopes, provider.scopeSeparator),
 		"state":         provider.state,
 	}
+	if provider.agentId > 0 {
+		(*queries)["agentid"] = fmt.Sprintf("%d", provider.agentId)
+	}
+
 	strQueries := object.ConvertStringMapToString(queries, "&")
 	strQueries = "https://open.weixin.qq.com/connect/oauth2/authorize?" + strQueries + "#wechat_redirect"
 	return strQueries
