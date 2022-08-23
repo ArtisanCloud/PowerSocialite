@@ -5,12 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ArtisanCloud/PowerLibs/v2/http/contract"
+	"github.com/ArtisanCloud/PowerLibs/v2/object"
 	"io/ioutil"
 	"reflect"
 	"time"
-
-	"github.com/ArtisanCloud/PowerLibs/v2/http/contract"
-	"github.com/ArtisanCloud/PowerLibs/v2/object"
 )
 
 type WeChat struct {
