@@ -107,9 +107,9 @@ func (base *Base) UserFromCode(code string) (*User, error) {
 		refreshTokenKey = (*tokenResponse)[base.refreshTokenKey].(string)
 	}
 
-	expiresInKey := 0
+	expiresInKey := 0.0
 	if (*tokenResponse)[base.expiresInKey] != nil {
-		expiresInKey = (*tokenResponse)[base.expiresInKey].(int)
+		expiresInKey = (*tokenResponse)[base.expiresInKey].(float64)
 	}
 
 	return user.SetRefreshToken(refreshTokenKey).
@@ -281,9 +281,23 @@ func (base *Base) normalizeAccessTokenResponse(response contract2.ResponseInterf
 	if err != nil {
 		return nil, err
 	}
+	var (
+		openID  string
+		scope   string
+		unionID string
+	)
+	if (*body)["openid"] != nil {
+		openID = (*body)["openid"].(string)
+		scope = (*body)["scope"].(string)
+		unionID = (*body)["unionid"].(string)
+	}
+
 	return &object.HashMap{
-		"access_token":  (*body)[base.expiresInKey],
-		"refresh_token": (*body)[base.accessTokenKey],
-		"expires_in":    (*body)[base.refreshTokenKey],
+		"access_token":  (*body)[base.accessTokenKey],
+		"refresh_token": (*body)[base.refreshTokenKey],
+		"expires_in":    (*body)[base.expiresInKey],
+		"openid":        openID,
+		"scope":         scope,
+		"unionid":       unionID,
 	}, err
 }

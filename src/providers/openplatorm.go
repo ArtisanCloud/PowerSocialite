@@ -142,10 +142,10 @@ func (provider *OpenPlatform) GetUserInfo(accessToken, openID, lang string) (res
 	if err != nil {
 		return result, err
 	}
-	client.PerformRequest(urlStr, "GET", nil, false, nil, &result)
+	_, err = client.PerformRequest(urlStr, "GET", nil, false, nil, &result)
 	if result.ErrCode != 0 {
 		err = fmt.Errorf("GetUserInfo error : errcode=%v , errmsg=%v", result.ErrCode, result.ErrMsg)
-		return
+		return result, err
 	}
-	return
+	return result, err
 }

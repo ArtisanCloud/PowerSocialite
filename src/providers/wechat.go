@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/ArtisanCloud/PowerLibs/v2/http/contract"
 	"github.com/ArtisanCloud/PowerLibs/v2/object"
+	"github.com/ArtisanCloud/PowerSocialite/v2/src/response/wechat"
 	"io/ioutil"
 	"reflect"
 	"time"
@@ -66,7 +67,6 @@ func (provider *WeChat) OverrideTokenFromCode() {
 		if err != nil {
 			return nil, err
 		}
-
 		return provider.normalizeAccessTokenResponse(response)
 	}
 }
@@ -148,7 +148,7 @@ func (provider *WeChat) OverrideGetTokenURL() {
 }
 
 func (provider *WeChat) UserFromCode(code string) (*User, error) {
-	if object.InArray("snsapi_login", provider.scopes) {
+	if object.InArray("snsapi_base", provider.scopes) {
 		tokenResponse, err := provider.GetTokenFromCode(code)
 		if err != nil {
 			return nil, err
@@ -164,28 +164,34 @@ func (provider *WeChat) UserFromCode(code string) (*User, error) {
 		if user.GetString("id", "") == "" {
 			return nil, errors.New((*mapToken)["errmsg"].(string))
 		}
-		return user, err
+
+		return user, nil
 	}
 
 	tokenResponse, err := provider.TokenFromCode(code)
-
-	user, err := provider.UserFromToken((*tokenResponse)[provider.accessTokenKey].(string), (*tokenResponse)["openid"].(string))
 	if err != nil {
 		return nil, err
 	}
 
-	refreshTokenKey := ""
+	token := (*tokenResponse)[provider.accessTokenKey].(string)
+	openID := (*tokenResponse)["openid"].(string)
+	user, err := provider.UserFromToken(token, openID)
+	if err != nil {
+		return nil, err
+	}
+
+	refreshToken := ""
 	if (*tokenResponse)[provider.refreshTokenKey] != nil {
-		refreshTokenKey = (*tokenResponse)[provider.refreshTokenKey].(string)
+		refreshToken = (*tokenResponse)[provider.refreshTokenKey].(string)
 	}
 
-	expiresInKey := 0
+	expiresIn := 0.0
 	if (*tokenResponse)[provider.expiresInKey] != nil {
-		expiresInKey = (*tokenResponse)[provider.expiresInKey].(int)
+		expiresIn = (*tokenResponse)[provider.expiresInKey].(float64)
 	}
 
-	return user.SetRefreshToken(refreshTokenKey).
-		SetExpiresIn(expiresInKey).
+	return user.SetRefreshToken(refreshToken).
+		SetExpiresIn(expiresIn).
 		SetTokenResponse(tokenResponse), nil
 }
 
@@ -265,7 +271,7 @@ func (provider *WeChat) OverrideGetTokenFields() {
 }
 
 func (provider *WeChat) GetTokenFromCode(code string) (contract.ResponseInterface, error) {
-	outBody := ""
+	result := &wechat.ResponseAuthenticatedAccessToken{}
 	client, err := provider.GetHttpClient()
 	if err != nil {
 		return nil, err
@@ -275,7 +281,11 @@ func (provider *WeChat) GetTokenFromCode(code string) (contract.ResponseInterfac
 			"Accept": "application/json",
 		},
 		"query": provider.GetTokenFields(code),
-	}, true, nil, &outBody)
+	}, false, nil, result)
+
+	if result.ErrCode != 0 {
+		return nil, errors.New(result.ErrMsg)
+	}
 
 	return rs, err
 }
