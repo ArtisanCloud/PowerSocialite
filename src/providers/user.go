@@ -106,7 +106,7 @@ func (user *User) GetRefreshToken() string {
 	return user.GetAttribute("refresh_token", "").(string)
 }
 
-func (user *User) SetExpiresIn(expiresIn int) *User {
+func (user *User) SetExpiresIn(expiresIn float64) *User {
 	user.SetAttribute("expires_in", expiresIn)
 
 	return user
