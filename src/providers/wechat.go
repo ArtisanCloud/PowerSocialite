@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ArtisanCloud/PowerLibs/v2/http/contract"
-	"github.com/ArtisanCloud/PowerLibs/v2/object"
 	"io/ioutil"
 	"reflect"
 	"time"
+
+	"github.com/ArtisanCloud/PowerLibs/v2/http/contract"
+	"github.com/ArtisanCloud/PowerLibs/v2/object"
 )
 
 type WeChat struct {
@@ -49,6 +50,9 @@ func NewWeChat(config *object.HashMap) *WeChat {
 
 func (provider *WeChat) GetName() string {
 	return "wechat"
+}
+func (provider *WeChat) SetScopes(scopes []string) {
+	provider.scopes = scopes
 }
 
 func (provider *WeChat) WithCountryCode() *WeChat {
