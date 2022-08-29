@@ -2,6 +2,11 @@ package models
 
 import "github.com/ArtisanCloud/PowerLibs/v2/object"
 
+const EMPLOYEE_STATUS_ACTIVE = 1     // 已激活
+const EMPLOYEE_STATUS_PROHIBITED = 2 // 已禁用
+const EMPLOYEE_STATUS_INACTIVE = 4   // 未激活
+const EMPLOYEE_STATUS_QUIT = 5       // 退出企业
+
 type Employee struct {
 	Alias           string          `json:"alias"`
 	Avatar          string          `json:"avatar"`
