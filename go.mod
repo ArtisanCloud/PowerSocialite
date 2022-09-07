@@ -4,14 +4,14 @@ go 1.17
 
 //replace github.com/ArtisanCloud/PowerLibs/v2 => ../PowerLibs
 
-require github.com/ArtisanCloud/PowerLibs/v2 v2.0.39
+require github.com/ArtisanCloud/PowerLibs/v2 v2.0.40
 
 require (
 	github.com/go-playground/locales v0.13.0 // indirect
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/go-playground/validator/v10 v10.4.1 // indirect
 	github.com/google/go-cmp v0.5.6 // indirect
-	github.com/guonaihong/gout v0.2.12 // indirect
+	github.com/guonaihong/gout v0.3.1 // indirect
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/leodido/go-urn v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect

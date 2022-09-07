@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	contract2 "github.com/ArtisanCloud/PowerLibs/v2/http/contract"
 	"github.com/ArtisanCloud/PowerLibs/v2/http/request"
 	"github.com/ArtisanCloud/PowerLibs/v2/object"
@@ -18,6 +19,7 @@ type Base struct {
 	ProviderInterface
 
 	state           string
+	forcePopup      bool
 	config          *configs.Config
 	redirectURL     string
 	parameters      *object.StringMap
@@ -174,6 +176,12 @@ func (base *Base) WithState(state string) ProviderInterface {
 	return base
 }
 
+func (base *Base) WithForcePopup(forcePopup bool) ProviderInterface {
+	base.forcePopup = forcePopup
+
+	return base
+}
+
 func (base *Base) Scopes(scopes []string) *Base {
 	base.scopes = scopes
 
@@ -264,6 +272,7 @@ func (base *Base) getCodeFields() *object.StringMap {
 	fields := &object.StringMap{
 		"client_id":     base.GetClientID(),
 		"redirect_uri":  base.redirectURL,
+		"forcePopup":    fmt.Sprintf("%t", base.forcePopup),
 		"scope":         base.formatScopes(base.scopes, base.scopeSeparator),
 		"response_type": "code",
 	}

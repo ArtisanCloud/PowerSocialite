@@ -242,6 +242,7 @@ func (provider *WeChat) OverrideMapUserToObject() {
 			"name":     collectionUser.Get("nickname", ""),
 			"nickname": collectionUser.Get("nickname", ""),
 			"avatar":   collectionUser.Get("headimgurl", ""),
+			"openID":   collectionUser.Get("openid", ""),
 			"email":    nil,
 		}, provider)
 	}
