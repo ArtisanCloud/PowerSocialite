@@ -163,3 +163,13 @@ func (user *User) SetProvider(provider ProviderInterface) *User {
 	user.provider = &provider
 	return user
 }
+
+func (user *User) IsSnapShotUser() bool {
+	return user.GetAttribute("is_snapshotuser", false).(bool)
+}
+
+func (user *User) SetSnapShotUser(IsSnapShotUser bool) *User {
+	user.SetAttribute("is_snapshotuser", IsSnapShotUser)
+	return user
+}
+
