@@ -285,28 +285,42 @@ func (base *Base) getCodeFields() *object.StringMap {
 }
 
 func (base *Base) normalizeAccessTokenResponse(response contract2.ResponseInterface) (*object.HashMap, error) {
-	// tbd
-	body, err := base.ParseBody(response.GetBody())
+	
+	token := wechat.ResponseAuthenticatedAccessToken{}
+
+	body := response.GetBody()
+	buf := new(bytes.Buffer)
+	_, _ = buf.ReadFrom(body)
+	err := json.Unmarshal(buf.Bytes(), &token)
 	if err != nil {
 		return nil, err
 	}
-	var (
-		openID  string
-		scope   string
-		unionID string
-	)
-	if (*body)["openid"] != nil {
-		openID = (*body)["openid"].(string)
-		scope = (*body)["scope"].(string)
-		unionID = (*body)["unionid"].(string)
-	}
 
-	return &object.HashMap{
-		"access_token":  (*body)[base.accessTokenKey],
-		"refresh_token": (*body)[base.refreshTokenKey],
-		"expires_in":    (*body)[base.expiresInKey],
-		"openid":        openID,
-		"scope":         scope,
-		"unionid":       unionID,
-	}, err
+	mapToken, err := object.StructToHashMap(token)
+
+	return mapToken, err
+	// tbd
+	// 	body, err := base.ParseBody(response.GetBody())
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	var (
+	// 		openID  string
+	// 		scope   string
+	// 		unionID string
+	// 	)
+	// 	if (*body)["openid"] != nil {
+	// 		openID = (*body)["openid"].(string)
+	// 		scope = (*body)["scope"].(string)
+	// 		unionID = (*body)["unionid"].(string)
+	// 	}
+
+	// 	return &object.HashMap{
+	// 		"access_token":  (*body)[base.accessTokenKey],
+	// 		"refresh_token": (*body)[base.refreshTokenKey],
+	// 		"expires_in":    (*body)[base.expiresInKey],
+	// 		"openid":        openID,
+	// 		"scope":         scope,
+	// 		"unionid":       unionID,
+	// 	}, err
 }
