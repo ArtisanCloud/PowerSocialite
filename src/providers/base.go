@@ -11,6 +11,7 @@ import (
 	"github.com/ArtisanCloud/PowerSocialite/v2/src/configs"
 	"github.com/ArtisanCloud/PowerSocialite/v2/src/contracts"
 	"github.com/ArtisanCloud/PowerSocialite/v2/src/response/weCom"
+	"github.com/ArtisanCloud/PowerSocialite/v2/src/response/wechat"
 	"io"
 	"strings"
 )
@@ -285,7 +286,7 @@ func (base *Base) getCodeFields() *object.StringMap {
 }
 
 func (base *Base) normalizeAccessTokenResponse(response contract2.ResponseInterface) (*object.HashMap, error) {
-	
+
 	token := wechat.ResponseAuthenticatedAccessToken{}
 
 	body := response.GetBody()
