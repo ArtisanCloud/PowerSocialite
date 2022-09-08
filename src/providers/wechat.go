@@ -173,6 +173,7 @@ func (provider *WeChat) UserFromCode(code string) (*User, error) {
 		return nil, err
 	}
 
+	isSnapShotUser := (*tokenResponse)["is_snapshotuser"].(float64)
 	token := (*tokenResponse)[provider.accessTokenKey].(string)
 	openID := (*tokenResponse)["openid"].(string)
 	user, err := provider.UserFromToken(token, openID)
@@ -190,7 +191,8 @@ func (provider *WeChat) UserFromCode(code string) (*User, error) {
 		expiresIn = (*tokenResponse)[provider.expiresInKey].(float64)
 	}
 
-	return user.SetRefreshToken(refreshToken).
+	return user.SetSnapShotUser(isSnapShotUser == 1).
+	        SetRefreshToken(refreshToken).
 		SetExpiresIn(expiresIn).
 		SetTokenResponse(tokenResponse), nil
 }
