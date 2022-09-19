@@ -60,39 +60,43 @@ func (provider *WeCom) GetBaseURL() string {
 }
 
 func (provider *WeCom) UserFromCode(code string) (*User, error) {
-	token, err := provider.GetAPIAccessToken()
-	if err != nil {
-		return nil, err
-	}
+	//token, err := provider.GetAPIAccessToken()
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//userInfo, err := provider.GetUser(token, code)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//var (
+	//	user       *User
+	//	userDetail *weCom.ResponseGetUserByID
+	//)
+	//
+	//if provider.detailed {
+	//	userDetail, err = provider.GetUserByID(userInfo.UserID)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	detail, err := object.StructToHashMap(userDetail)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	user = provider.MapUserToObject(detail)
+	//} else {
+	//	info, err := object.StructToHashMap(userInfo)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	user = provider.MapUserToObject(info)
+	//}
 
-	userInfo, err := provider.GetUser(token, code)
-	if err != nil {
-		return nil, err
-	}
-	var (
-		user       *User
-		userDetail *weCom.ResponseGetUserByID
-	)
+	user := NewUser(&object.HashMap{
+		"id": "michael",
+	}, provider)
 
-	if provider.detailed {
-		userDetail, err = provider.GetUserByID(userInfo.UserID)
-		if err != nil {
-			return nil, err
-		}
-		detail, err := object.StructToHashMap(userDetail)
-		if err != nil {
-			return nil, err
-		}
-		user = provider.MapUserToObject(detail)
-	} else {
-		info, err := object.StructToHashMap(userInfo)
-		if err != nil {
-			return nil, err
-		}
-		user = provider.MapUserToObject(info)
-	}
-
-	return user.SetProvider(provider).SetRaw(*user.GetAttributes()), nil
+	return user.SetProvider(provider).SetRaw(user.GetAttributes()), nil
 }
 
 func (provider *WeCom) Detailed() *WeCom {
@@ -170,7 +174,7 @@ func (provider *WeCom) ContactFromCode(code string) (*User, error) {
 		user = provider.MapUserToContact(userInfo)
 	}
 
-	return user.SetProvider(provider).SetRaw(*user.GetAttributes()), nil
+	return user.SetProvider(provider).SetRaw(user.GetAttributes()), nil
 }
 
 func (provider *WeCom) GetAPIAccessToken() (result string, err error) {

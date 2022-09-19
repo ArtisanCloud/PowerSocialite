@@ -115,17 +115,26 @@ func (user *User) GetExpiresIn() int {
 	return user.GetAttribute("expires_in", 0).(int)
 }
 
-func (user *User) SetRaw(u object.HashMap) *User {
-	user.SetAttribute("raw", u)
+func (user *User) SetRaw(u *object.HashMap) *User {
+	// copy object from raw u
+	raw, _ := object.StructToHashMap(u)
+
+	user.SetAttribute("raw", raw)
 
 	return user
 }
-func (user *User) GetRaw() *object.HashMap {
+func (user *User) GetRaw() (raw *object.HashMap, err error) {
 	if user.GetAttribute("raw", nil) != nil {
-		raw := user.GetAttribute("raw", nil).(object.HashMap)
-		return &raw
+		strRaw := user.GetAttribute("raw", nil).(string)
+		raw = &object.HashMap{}
+		err = object.JsonDecode([]byte(strRaw), raw)
+		if err != nil {
+			return nil, err
+		}
+
+		return raw, nil
 	}
-	return nil
+	return nil, nil
 
 }
 
@@ -172,4 +181,3 @@ func (user *User) SetSnapShotUser(IsSnapShotUser bool) *User {
 	user.SetAttribute("is_snapshotuser", IsSnapShotUser)
 	return user
 }
-
