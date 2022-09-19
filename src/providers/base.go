@@ -128,7 +128,7 @@ func (base *Base) UserFromToken(token string, openID string) (*User, error) {
 
 	return base.MapUserToObject(user).
 		SetProvider(base).
-		SetRaw(*user).
+		SetRaw(user).
 		SetAccessToken(token), nil
 }
 

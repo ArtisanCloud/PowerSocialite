@@ -74,25 +74,26 @@ func (provider *WeCom) UserFromCode(code string) (*User, error) {
 		userDetail *weCom.ResponseGetUserByID
 	)
 
+	rawData := &object.HashMap{}
 	if provider.detailed {
 		userDetail, err = provider.GetUserByID(userInfo.UserID)
 		if err != nil {
 			return nil, err
 		}
-		detail, err := object.StructToHashMap(userDetail)
+		rawData, err = object.StructToHashMap(userDetail)
 		if err != nil {
 			return nil, err
 		}
-		user = provider.MapUserToObject(detail)
+		user = provider.MapUserToObject(rawData)
 	} else {
-		info, err := object.StructToHashMap(userInfo)
+		rawData, err = object.StructToHashMap(userInfo)
 		if err != nil {
 			return nil, err
 		}
-		user = provider.MapUserToObject(info)
+		user = provider.MapUserToObject(rawData)
 	}
 
-	return user.SetProvider(provider).SetRaw(*user.GetAttributes()), nil
+	return user.SetProvider(provider).SetRaw(rawData), nil
 }
 
 func (provider *WeCom) Detailed() *WeCom {
@@ -170,7 +171,7 @@ func (provider *WeCom) ContactFromCode(code string) (*User, error) {
 		user = provider.MapUserToContact(userInfo)
 	}
 
-	return user.SetProvider(provider).SetRaw(*user.GetAttributes()), nil
+	return user.SetProvider(provider).SetRaw(user.GetAttributes()), nil
 }
 
 func (provider *WeCom) GetAPIAccessToken() (result string, err error) {
