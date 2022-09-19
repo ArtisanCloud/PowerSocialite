@@ -60,43 +60,40 @@ func (provider *WeCom) GetBaseURL() string {
 }
 
 func (provider *WeCom) UserFromCode(code string) (*User, error) {
-	//token, err := provider.GetAPIAccessToken()
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//userInfo, err := provider.GetUser(token, code)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//var (
-	//	user       *User
-	//	userDetail *weCom.ResponseGetUserByID
-	//)
-	//
-	//if provider.detailed {
-	//	userDetail, err = provider.GetUserByID(userInfo.UserID)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	detail, err := object.StructToHashMap(userDetail)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	user = provider.MapUserToObject(detail)
-	//} else {
-	//	info, err := object.StructToHashMap(userInfo)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	user = provider.MapUserToObject(info)
-	//}
+	token, err := provider.GetAPIAccessToken()
+	if err != nil {
+		return nil, err
+	}
 
-	user := NewUser(&object.HashMap{
-		"id": "michael",
-	}, provider)
+	userInfo, err := provider.GetUser(token, code)
+	if err != nil {
+		return nil, err
+	}
+	var (
+		user       *User
+		userDetail *weCom.ResponseGetUserByID
+	)
 
-	return user.SetProvider(provider).SetRaw(user.GetAttributes()), nil
+	rawData := &object.HashMap{}
+	if provider.detailed {
+		userDetail, err = provider.GetUserByID(userInfo.UserID)
+		if err != nil {
+			return nil, err
+		}
+		rawData, err = object.StructToHashMap(userDetail)
+		if err != nil {
+			return nil, err
+		}
+		user = provider.MapUserToObject(rawData)
+	} else {
+		rawData, err = object.StructToHashMap(userInfo)
+		if err != nil {
+			return nil, err
+		}
+		user = provider.MapUserToObject(rawData)
+	}
+
+	return user.SetProvider(provider).SetRaw(rawData), nil
 }
 
 func (provider *WeCom) Detailed() *WeCom {
