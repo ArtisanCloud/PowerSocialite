@@ -144,7 +144,22 @@ func (user *User) SetTokenResponse(response *object.HashMap) *User {
 	return user
 }
 func (user *User) GetTokenResponse() *object.HashMap {
-	return user.GetAttribute("token_response", nil).(*object.HashMap)
+	rsToken := user.GetAttribute("token_response", nil)
+	switch rs := rsToken.(type) {
+	case *object.HashMap:
+		return rs
+	case string:
+		mapToken := &object.HashMap{}
+		err := object.JsonDecode([]byte(rs), mapToken)
+		if err != nil {
+			println(err)
+			return nil
+		}
+		return mapToken
+	default:
+		return nil
+	}
+
 }
 
 func (user *User) JsonSerialize() *object.HashMap {
