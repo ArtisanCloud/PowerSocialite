@@ -54,7 +54,7 @@ func (user *User) GetDeviceID() string {
 
 func (user *User) GetNickname() string {
 	if user.Attributes["nickname"] != nil {
-		return user.Attributes["id"].(string)
+		return user.Attributes["nickname"].(string)
 	} else {
 		return user.GetName()
 	}
