@@ -1,6 +1,6 @@
 package models
 
-import "github.com/ArtisanCloud/PowerLibs/v2/object"
+import "github.com/ArtisanCloud/PowerLibs/v3/object"
 
 const EMPLOYEE_STATUS_ACTIVE = 1     // 已激活
 const EMPLOYEE_STATUS_PROHIBITED = 2 // 已禁用
