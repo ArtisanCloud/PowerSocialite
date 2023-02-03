@@ -3,9 +3,10 @@ package providers
 import (
 	"errors"
 	"fmt"
-	"github.com/ArtisanCloud/PowerLibs/v2/object"
-	"github.com/ArtisanCloud/PowerSocialite/v2/src/exceptions"
-	"github.com/ArtisanCloud/PowerSocialite/v2/src/response/weCom"
+	"github.com/ArtisanCloud/PowerLibs/v3/http/helper"
+	"github.com/ArtisanCloud/PowerLibs/v3/object"
+	"github.com/ArtisanCloud/PowerSocialite/v3/src/exceptions"
+	"github.com/ArtisanCloud/PowerSocialite/v3/src/response/weCom"
 )
 
 type WeCom struct {
@@ -109,6 +110,21 @@ func (provider *WeCom) WithApiAccessToken(apiAccessToken string) *WeCom {
 	return provider
 }
 
+func (provider *WeCom) GetHttpClient() (*helper.RequestHelper, error) {
+	if provider.httpHelper != nil {
+		return provider.httpHelper, nil
+	} else {
+		h, err := helper.NewRequestHelper(&helper.Config{
+			BaseUrl: provider.baseUrl,
+		})
+
+		h.WithMiddleware(helper.HttpDebugMiddleware(provider.GetConfig().GetBool("http_debug", false)))
+
+		return h, err
+	}
+
+}
+
 func (provider *WeCom) GetOAuthURL() string {
 	queries := &object.StringMap{
 		"appid":         provider.GetClientID(),
@@ -191,18 +207,16 @@ func (provider *WeCom) GetUser(token string, code string) (*weCom.ResponseGetUse
 	if err != nil {
 		return nil, err
 	}
-	client.PerformRequest(
-		"https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo",
-		"GET",
-		&object.HashMap{
-			"query": &object.StringMap{
-				"access_token": token,
-				"code":         code,
-			},
-		},
-		false, nil,
-		outResponse,
-	)
+
+	err = client.Df().Url("https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo").
+		Method("GET").
+		Query("access_token", token).
+		Query("code", code).
+		Result(outResponse)
+	if err != nil {
+		return nil, err
+	}
+
 	if outResponse.ErrCode > 0 || (outResponse.UserID == "" && outResponse.DeviceID == "" && outResponse.OpenID == "") {
 		//defer exceptions.NewAuthorizeFailedException().HandleException(nil, "base.get.userID", outResponse)
 		//if outResponse.ErrMSG == "" {
@@ -226,18 +240,14 @@ func (provider *WeCom) GetUserByID(userID string) (*weCom.ResponseGetUserByID, e
 	if err != nil {
 		return nil, err
 	}
-	client.PerformRequest(
-		"https://qyapi.weixin.qq.com/cgi-bin/user/get",
-		"POST",
-		&object.HashMap{
-			"query": &object.StringMap{
-				"access_token": strAPIAccessToken,
-				"userid":       userID,
-			},
-		},
-		false, nil,
-		outResponse,
-	)
+	err = client.Df().Url("https://qyapi.weixin.qq.com/cgi-bin/user/get").Method("POST").
+		Query("access_token", strAPIAccessToken).
+		Query("userid", userID).
+		Result(outResponse)
+	if err != nil {
+		return nil, err
+	}
+
 	if outResponse.ErrCode > 0 || outResponse.UserID == "" {
 		//defer (&exceptions.AuthorizeFailedException{}).HandleException(nil, "base.refresh.token", outResponse)
 		//if outResponse.ErrMSG == "" {
@@ -269,18 +279,15 @@ func (provider *WeCom) requestApiAccessToken() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	client.PerformRequest(
-		"https://qyapi.weixin.qq.com/cgi-bin/gettoken",
-		"GET",
-		&object.HashMap{
-			"query": &object.StringMap{
-				"corpid":     corpID,
-				"corpsecret": corpSecret,
-			},
-		},
-		false, nil,
-		outResponse,
-	)
+	err = client.Df().Url("https://qyapi.weixin.qq.com/cgi-bin/gettoken").
+		Method("GET").
+		Query("corpid", corpID).
+		Query("corpsecret", corpSecret).
+		Result(outResponse)
+	if err != nil {
+		return "", err
+	}
+
 	if outResponse.ErrCode > 0 {
 		defer (&exceptions.AuthorizeFailedException{}).HandleException(nil, "base.refresh.token", outResponse)
 		if outResponse.ErrMSG == "" {
@@ -341,19 +348,20 @@ func (provider *WeCom) GetUserInfo(code string) (*weCom.ResponseGetUserInfo, err
 	if err != nil {
 		return nil, err
 	}
-	query := &object.StringMap{
-		"access_token": strAPIAccessToken,
-		"code":         code,
-	}
 
 	client, err := provider.GetHttpClient()
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = client.PerformRequest("cgi-bin/user/getuserinfo", "GET", &object.HashMap{
-		"query": query,
-	}, false, nil, result)
+	err = client.Df().Url("https://qyapi.weixin.qq.com/cgi-bin/auth/getuserinfo").
+		Method("GET").
+		Query("access_token", strAPIAccessToken).
+		Query("code", code).
+		Result(result)
+	if err != nil {
+		return nil, err
+	}
 
 	return result, err
 }
@@ -380,11 +388,15 @@ func (provider *WeCom) GetUserDetail(userTicket string) (*weCom.ResponseGetUserD
 		return nil, err
 	}
 
-	_, err = client.PerformRequest("cgi-bin/user/getuserdetail", "POST",
-		&object.HashMap{
+	err = client.Df().Url("https://qyapi.weixin.qq.com/cgi-bin/auth/getuserinfo").
+		Method("POST").
+		Json(&object.HashMap{
 			"form_params": params,
 			"query":       query,
-		}, false, nil, result)
+		}).Result(result)
+	if err != nil {
+		return nil, err
+	}
 
 	return result, err
 }

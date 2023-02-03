@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ArtisanCloud/PowerLibs/v2/http/contract"
-	"github.com/ArtisanCloud/PowerLibs/v2/object"
-	"github.com/ArtisanCloud/PowerSocialite/v2/src/response/wechat"
+	"github.com/ArtisanCloud/PowerLibs/v3/http/helper"
+	"github.com/ArtisanCloud/PowerLibs/v3/object"
+	"github.com/ArtisanCloud/PowerSocialite/v3/src/response/wechat"
 	"io/ioutil"
+	"net/http"
 	"reflect"
 	"time"
 )
@@ -46,6 +47,21 @@ func NewWeChat(config *object.HashMap) *WeChat {
 	wechat.OverrideGetTokenFields()
 
 	return wechat
+}
+
+func (provider *WeChat) GetHttpClient() (*helper.RequestHelper, error) {
+	if provider.httpHelper != nil {
+		return provider.httpHelper, nil
+	} else {
+		h, err := helper.NewRequestHelper(&helper.Config{
+			BaseUrl: provider.baseURL,
+		})
+
+		h.WithMiddleware(helper.HttpDebugMiddleware(provider.GetConfig().GetBool("http_debug", false)))
+
+		return h, err
+	}
+
 }
 
 func (provider *WeChat) GetName() string {
@@ -153,7 +169,7 @@ func (provider *WeChat) UserFromCode(code string) (*User, error) {
 		if err != nil {
 			return nil, err
 		}
-		bodyBuffer, err := ioutil.ReadAll(tokenResponse.GetBody())
+		bodyBuffer, err := ioutil.ReadAll(tokenResponse.Body)
 		if err != nil {
 			return nil, err
 		}
@@ -215,24 +231,22 @@ func (provider *WeChat) OverrideGetUserByToken() {
 			}
 		}
 
-		body := ""
 		client, err := provider.GetHttpClient()
 		if err != nil {
 			return nil, err
 		}
-		response, err := client.PerformRequest(
-			provider.baseURL+"/userinfo", "GET", &object.HashMap{
-				"query": &object.StringMap{
-					"access_token": token,
-					"openid":       openID,
-					"lang":         language,
-				},
-			}, true, nil, &body)
+		response, err := client.Df().Url(provider.baseURL+"/userinfo").
+			Method("GET").
+			Query("access_token", token).
+			Query("openid", openID).
+			Query("lang", language).
+			Request()
+
 		if err != nil {
 			return nil, err
 		}
 
-		return provider.ParseBody(response.GetBody())
+		return provider.ParseBody(response.Body)
 
 	}
 }
@@ -278,18 +292,28 @@ func (provider *WeChat) OverrideGetTokenFields() {
 	}
 }
 
-func (provider *WeChat) GetTokenFromCode(code string) (contract.ResponseInterface, error) {
+func (provider *WeChat) GetTokenFromCode(code string) (*http.Response, error) {
 	result := &wechat.ResponseAuthenticatedAccessToken{}
 	client, err := provider.GetHttpClient()
 	if err != nil {
 		return nil, err
 	}
-	rs, err := client.PerformRequest(provider.GetTokenURL(), "GET", &object.HashMap{
-		"headers": &object.HashMap{
-			"Accept": "application/json",
-		},
-		"query": provider.GetTokenFields(code),
-	}, false, nil, result)
+	df := client.Df().Url(provider.GetTokenURL()).Method("GET").
+		Header("Accept", "application/json")
+
+	queries := provider.GetTokenFields(code)
+	for k, v := range *queries {
+		df.Query(k, v)
+	}
+
+	rs, err := df.Request()
+	if err != nil {
+		return nil, err
+	}
+	err = client.ParseResponseBodyContent(rs, result)
+	if err != nil {
+		return nil, err
+	}
 
 	if result.ErrCode != 0 {
 		return nil, errors.New(result.ErrMsg)
