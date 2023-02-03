@@ -3,6 +3,7 @@ package providers
 import (
 	"errors"
 	"fmt"
+	"github.com/ArtisanCloud/PowerLibs/v3/http/helper"
 	"github.com/ArtisanCloud/PowerLibs/v3/object"
 	"github.com/ArtisanCloud/PowerSocialite/v3/src/exceptions"
 	"github.com/ArtisanCloud/PowerSocialite/v3/src/response/weCom"
@@ -107,6 +108,21 @@ func (provider *WeCom) WithApiAccessToken(apiAccessToken string) *WeCom {
 	provider.apiAccessToken = apiAccessToken
 
 	return provider
+}
+
+func (provider *WeCom) GetHttpClient() (*helper.RequestHelper, error) {
+	if provider.httpHelper != nil {
+		return provider.httpHelper, nil
+	} else {
+		h, err := helper.NewRequestHelper(&helper.Config{
+			BaseUrl: provider.baseUrl,
+		})
+
+		h.WithMiddleware(helper.HttpDebugMiddleware(provider.GetConfig().GetBool("http_debug", false)))
+
+		return h, err
+	}
+
 }
 
 func (provider *WeCom) GetOAuthURL() string {
@@ -338,7 +354,7 @@ func (provider *WeCom) GetUserInfo(code string) (*weCom.ResponseGetUserInfo, err
 		return nil, err
 	}
 
-	err = client.Df().Url("cgi-bin/user/getuserinfo").
+	err = client.Df().Url("https://qyapi.weixin.qq.com/cgi-bin/auth/getuserinfo").
 		Method("GET").
 		Query("access_token", strAPIAccessToken).
 		Query("code", code).
@@ -372,10 +388,12 @@ func (provider *WeCom) GetUserDetail(userTicket string) (*weCom.ResponseGetUserD
 		return nil, err
 	}
 
-	err = client.Df().Url("cgi-bin/user/getuserdetail").Method("POST").Json(&object.HashMap{
-		"form_params": params,
-		"query":       query,
-	}).Result(result)
+	err = client.Df().Url("https://qyapi.weixin.qq.com/cgi-bin/auth/getuserinfo").
+		Method("POST").
+		Json(&object.HashMap{
+			"form_params": params,
+			"query":       query,
+		}).Result(result)
 	if err != nil {
 		return nil, err
 	}
