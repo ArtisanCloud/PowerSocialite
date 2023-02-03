@@ -1,6 +1,6 @@
 package models
 
-import "github.com/ArtisanCloud/PowerLibs/v3/object"
+import "github.com/ArtisanCloud/PowerLibs/v2/object"
 
 type Config struct {
 	*object.Collection

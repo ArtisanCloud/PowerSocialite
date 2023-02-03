@@ -2,7 +2,7 @@ package providers
 
 import (
 	"fmt"
-	"github.com/ArtisanCloud/PowerLibs/v3/object"
+	"github.com/ArtisanCloud/PowerLibs/v2/object"
 	"net/url"
 )
 
@@ -77,10 +77,7 @@ func (provider *OpenPlatform) GetUserAccessToken(code string) (result ResAccessT
 	if err != nil {
 		return result, err
 	}
-	err = client.Df().Url(urlStr).Method("GET").Result(&result)
-	if err != nil {
-		return result, err
-	}
+	client.PerformRequest(urlStr, "GET", nil, false, nil, &result)
 	if result.ErrCode != 0 {
 		err = fmt.Errorf("GetUserAccessToken error : errcode=%v , errmsg=%v", result.ErrCode, result.ErrMsg)
 		return
@@ -95,10 +92,7 @@ func (provider *OpenPlatform) RefreshAccessToken(refreshToken string) (result Re
 	if err != nil {
 		return result, err
 	}
-	err = client.Df().Url(urlStr).Method("GET").Result(&result)
-	if err != nil {
-		return result, err
-	}
+	client.PerformRequest(urlStr, "GET", nil, false, nil, &result)
 	if result.ErrCode != 0 {
 		err = fmt.Errorf("RefreshAccessToken error : errcode=%v , errmsg=%v", result.ErrCode, result.ErrMsg)
 		return
@@ -113,10 +107,7 @@ func (provider *OpenPlatform) CheckAccessToken(accessToken, openID string) (b bo
 	if err != nil {
 		return false, err
 	}
-	err = client.Df().Url(urlStr).Method("GET").Result(&result)
-	if err != nil {
-		return false, err
-	}
+	client.PerformRequest(urlStr, "GET", nil, false, nil, &result)
 
 	if result.ErrCode != 0 {
 		b = false
@@ -151,10 +142,7 @@ func (provider *OpenPlatform) GetUserInfo(accessToken, openID, lang string) (res
 	if err != nil {
 		return result, err
 	}
-	err = client.Df().Url(urlStr).Method("GET").Result(&result)
-	if err != nil {
-		return result, err
-	}
+	_, err = client.PerformRequest(urlStr, "GET", nil, false, nil, &result)
 	if result.ErrCode != 0 {
 		err = fmt.Errorf("GetUserInfo error : errcode=%v , errmsg=%v", result.ErrCode, result.ErrMsg)
 		return result, err
