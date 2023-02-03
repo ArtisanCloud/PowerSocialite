@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ArtisanCloud/PowerLibs/v3/http/helper"
-	"github.com/ArtisanCloud/PowerLibs/v3/object"
-	"github.com/ArtisanCloud/PowerSocialite/v3/src/configs"
-	"github.com/ArtisanCloud/PowerSocialite/v3/src/contracts"
-	"github.com/ArtisanCloud/PowerSocialite/v3/src/response/wechat"
+	contract2 "github.com/ArtisanCloud/PowerLibs/v2/http/contract"
+	"github.com/ArtisanCloud/PowerLibs/v2/http/request"
+	"github.com/ArtisanCloud/PowerLibs/v2/object"
+	"github.com/ArtisanCloud/PowerSocialite/v2/src/configs"
+	"github.com/ArtisanCloud/PowerSocialite/v2/src/contracts"
+	"github.com/ArtisanCloud/PowerSocialite/v2/src/response/weCom"
+	"github.com/ArtisanCloud/PowerSocialite/v2/src/response/wechat"
 	"io"
-	"net/http"
 	"strings"
 )
 
@@ -25,7 +26,7 @@ type Base struct {
 	parameters      *object.StringMap
 	scopes          []string
 	scopeSeparator  string
-	httpHelper      *helper.RequestHelper
+	httpClient      *request.HttpRequest
 	guzzleOptions   *object.HashMap
 	encodingType    int
 	expiresInKey    string
@@ -133,20 +134,23 @@ func (base *Base) UserFromToken(token string, openID string) (*User, error) {
 
 func (base *Base) OverrideTokenFromCode() {
 	base.TokenFromCode = func(code string) (*object.HashMap, error) {
-		//outResponse := &weCom.ResponseTokenFromCode{}
+		outResponse := &weCom.ResponseTokenFromCode{}
 		client, err := base.GetHttpClient()
 		if err != nil {
 			return nil, err
 		}
-		response, err := client.Df().
-			Url(base.GetTokenURL()).
-			Method("POST").
-			Json(&object.HashMap{
+		response, err := client.PerformRequest(
+			base.GetTokenURL(),
+			"POST",
+			&object.HashMap{
 				"form_params": base.GetTokenFields(code),
 				"headers": &object.HashMap{
 					"Accept": "application/json",
 				},
-			}).Request()
+			},
+			false, nil,
+			outResponse,
+		)
 
 		if err != nil {
 			return nil, err
@@ -217,13 +221,11 @@ func (base *Base) GetClientSecret() string {
 	return result
 }
 
-func (base *Base) GetHttpClient() (*helper.RequestHelper, error) {
-	if base.httpHelper != nil {
-		return base.httpHelper, nil
+func (base *Base) GetHttpClient() (*request.HttpRequest, error) {
+	if base.httpClient != nil {
+		return base.httpClient, nil
 	} else {
-		return helper.NewRequestHelper(&helper.Config{
-			BaseUrl: "",
-		})
+		return request.NewHttpRequest(base.config.All())
 	}
 
 }
@@ -283,11 +285,11 @@ func (base *Base) getCodeFields() *object.StringMap {
 	return fields
 }
 
-func (base *Base) normalizeAccessTokenResponse(response *http.Response) (*object.HashMap, error) {
+func (base *Base) normalizeAccessTokenResponse(response contract2.ResponseInterface) (*object.HashMap, error) {
 
 	token := wechat.ResponseAuthenticatedAccessToken{}
 
-	body := response.Body
+	body := response.GetBody()
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(body)
 	err := json.Unmarshal(buf.Bytes(), &token)
