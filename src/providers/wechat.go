@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ArtisanCloud/PowerLibs/v3/http/helper"
 	"github.com/ArtisanCloud/PowerLibs/v3/object"
 	"github.com/ArtisanCloud/PowerSocialite/v3/src/response/wechat"
 	"io/ioutil"
@@ -46,6 +47,21 @@ func NewWeChat(config *object.HashMap) *WeChat {
 	wechat.OverrideGetTokenFields()
 
 	return wechat
+}
+
+func (provider *WeChat) GetHttpClient() (*helper.RequestHelper, error) {
+	if provider.httpHelper != nil {
+		return provider.httpHelper, nil
+	} else {
+		h, err := helper.NewRequestHelper(&helper.Config{
+			BaseUrl: provider.baseURL,
+		})
+
+		h.WithMiddleware(helper.HttpDebugMiddleware(provider.GetConfig().GetBool("http_debug", false)))
+
+		return h, err
+	}
+
 }
 
 func (provider *WeChat) GetName() string {
