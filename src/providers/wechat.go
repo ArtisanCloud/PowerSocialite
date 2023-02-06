@@ -105,7 +105,7 @@ func (provider *WeChat) OverrideGetAuthURL() {
 		path := "oauth2/authorize"
 
 		// 网页授权登录
-		if len(provider.scopes) > 0 {
+		if len(provider.scopes) > 0 && object.ContainsString(provider.scopes, "snsapi_login") {
 			path = "qrconnect"
 		}
 
