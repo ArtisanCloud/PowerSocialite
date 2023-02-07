@@ -191,12 +191,17 @@ func (provider *WeCom) ContactFromCode(code string) (*User, error) {
 }
 
 func (provider *WeCom) GetAPIAccessToken() (result string, err error) {
-	if provider.apiAccessToken == "" {
-		provider.apiAccessToken, err = provider.requestApiAccessToken()
-		if err != nil {
-			return "", err
-		}
+	//if provider.apiAccessToken == "" {
+	//	provider.apiAccessToken, err = provider.requestApiAccessToken()
+	//	if err != nil {
+	//		return "", err
+	//	}
+	//}
+	provider.apiAccessToken, err = provider.requestApiAccessToken()
+	if err != nil {
+		return "", err
 	}
+
 	return provider.apiAccessToken, nil
 }
 
