@@ -330,21 +330,16 @@ func (provider *WeChat) PrepareForComponent(component *object.HashMap) error {
 			value = reflect.ValueOf(v)
 		}
 		switch k {
-		case "id":
-		case "app_id":
-		case "component_app_id":
+		case "id", "app_id", "component_app_id":
 			config["id"] = value
 			break
-		case "token":
-		case "app_token":
-		case "access_token":
-		case "component_access_token":
+		case "token", "app_token", "access_token", "component_access_token":
 			config["token"] = value
 			break
 		}
 	}
 
-	if len(config) == 2 {
+	if len(config) != 2 {
 		return errors.New("Please check your config arguments is available.")
 	}
 
