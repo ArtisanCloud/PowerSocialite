@@ -393,7 +393,7 @@ func (provider *WeCom) GetUserDetail(userTicket string) (*weCom.ResponseGetUserD
 		return nil, err
 	}
 
-	err = client.Df().Url("https://qyapi.weixin.qq.com/cgi-bin/auth/getuserinfo").
+	err = client.Df().Url("https://qyapi.weixin.qq.com/cgi-bin/auth/getuserdetail").
 		Method("POST").
 		Json(&object.HashMap{
 			"form_params": params,
