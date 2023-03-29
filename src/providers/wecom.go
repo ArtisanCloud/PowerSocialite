@@ -384,9 +384,6 @@ func (provider *WeCom) GetUserDetail(userTicket string) (*weCom.ResponseGetUserD
 	params := &object.HashMap{
 		"user_ticket": userTicket,
 	}
-	query := &object.StringMap{
-		"access_token": strAPIAccessToken,
-	}
 
 	client, err := provider.GetHttpClient()
 	if err != nil {
@@ -395,10 +392,9 @@ func (provider *WeCom) GetUserDetail(userTicket string) (*weCom.ResponseGetUserD
 
 	err = client.Df().Url("https://qyapi.weixin.qq.com/cgi-bin/auth/getuserdetail").
 		Method("POST").
-		Json(&object.HashMap{
-			"form_params": params,
-			"query":       query,
-		}).Result(result)
+		Query("access_token", strAPIAccessToken).
+		Json(params).
+		Result(result)
 	if err != nil {
 		return nil, err
 	}
