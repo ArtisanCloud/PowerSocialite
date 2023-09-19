@@ -136,7 +136,7 @@ func (provider *WeChat) OverrideGetCodeFields() {
 		if provider.state == "" {
 			data, _ := json.Marshal(time.Now())
 			buffer := md5.Sum(data)
-			provider.state = string(buffer[:])
+			provider.state = fmt.Sprintf("%x", buffer)
 		}
 
 		config := provider.GetConfig()
@@ -218,7 +218,6 @@ func (provider *WeChat) UserFromCode(code string) (*User, error) {
 		SetTokenResponse(tokenResponse), nil
 }
 
-//
 func (provider *WeChat) OverrideGetUserByToken() {
 	provider.GetUserByToken = func(token string, openID string) (*object.HashMap, error) {
 
