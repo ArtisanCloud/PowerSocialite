@@ -1,0 +1,11 @@
+package main
+
+import (
+	"fmt"
+)
+
+func main() {
+
+	fmt.Printf("hello Socialite! \n")
+	Dump(123)
+}
