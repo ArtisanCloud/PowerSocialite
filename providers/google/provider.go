@@ -7,7 +7,9 @@ import (
 	"github.com/ArtisanCloud/PowerSocialite/v4/kernel"
 	"github.com/ArtisanCloud/PowerSocialite/v4/models"
 	"github.com/ArtisanCloud/PowerSocialite/v4/providers"
+	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 	"io"
 	"net/http"
 	"net/url"
@@ -23,8 +25,26 @@ type Provider struct {
 	authCodeOptions []oauth2.AuthCodeOption
 }
 
-func NewProvider(config *Config) *Provider {
-	baseProvider := providers.NewBaseProvider(&config.BaseConfig)
+func NewProvider(config *Config) (*Provider, error) {
+	if config == nil {
+		return nil, errors.New("config is nil")
+	}
+
+	if config.BaseConfig.Scopes == nil || len(config.BaseConfig.Scopes) == 0 {
+		config.BaseConfig.Scopes = []string{"email"}
+	}
+	if config.BaseConfig.AuthUrl == "" {
+		config.BaseConfig.AuthUrl = google.Endpoint.AuthURL
+	}
+	if config.BaseConfig.TokenUrl == "" {
+		config.BaseConfig.TokenUrl = google.Endpoint.TokenURL
+	}
+
+	baseProvider, err := providers.NewBaseProvider(&config.BaseConfig)
+	if err != nil {
+		return nil, err
+	}
+
 	provider := &Provider{
 		BaseProvider: baseProvider,
 		config:       config,
@@ -33,11 +53,7 @@ func NewProvider(config *Config) *Provider {
 		},
 	}
 
-	if config.BaseConfig.Scope == nil || len(config.BaseConfig.Scope) == 0 {
-		config.BaseConfig.Scope = []string{"email"}
-	}
-
-	return provider
+	return provider, nil
 }
 
 // StartAuth asks Google for an authentication endpoint.
