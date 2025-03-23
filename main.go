@@ -5,7 +5,5 @@ import (
 )
 
 func main() {
-
 	fmt.Printf("hello Socialite! \n")
-	Dump(123)
 }
