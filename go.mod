@@ -2,8 +2,6 @@ module github.com/ArtisanCloud/PowerSocialite/v4
 
 go 1.23
 
-toolchain go1.23.1
-
 require (
 	github.com/clbanning/mxj/v2 v2.7.0
 	github.com/gorilla/sessions v1.4.0
