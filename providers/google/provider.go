@@ -3,8 +3,8 @@ package google
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ArtisanCloud/PowerSocialite/v4/auth"
 	"github.com/ArtisanCloud/PowerSocialite/v4/contracts"
-	"github.com/ArtisanCloud/PowerSocialite/v4/kernel"
 	"github.com/ArtisanCloud/PowerSocialite/v4/models"
 	"github.com/ArtisanCloud/PowerSocialite/v4/providers"
 	"github.com/pkg/errors"
@@ -121,7 +121,7 @@ func (p *Provider) UserFromSession(session contracts.ISession) (*models.User, er
 // RefreshToken get new access token based on the refresh token
 func (p *Provider) RefreshToken(refreshToken string) (*oauth2.Token, error) {
 	token := &oauth2.Token{RefreshToken: refreshToken}
-	ts := p.OAuthConfig.TokenSource(kernel.ContextForClient(p.Client()), token)
+	ts := p.OAuthConfig.TokenSource(auth.ContextForClient(p.Client()), token)
 	newToken, err := ts.Token()
 	if err != nil {
 		return nil, err
@@ -170,8 +170,8 @@ func (p *Provider) SetAccessType(at string) {
 	p.authCodeOptions = append(p.authCodeOptions, oauth2.SetAuthURLParam("access_type", at))
 }
 
-// UnmarshalSession will unmarshal a JSON string into a session.
-func (p *Provider) UnmarshalSession(data string) (contracts.ISession, error) {
+// GetSession will unmarshal a JSON string into a session.
+func (p *Provider) GetSession(data string) (contracts.ISession, error) {
 	sess := &Session{}
 	err := json.NewDecoder(strings.NewReader(data)).Decode(sess)
 	return sess, err

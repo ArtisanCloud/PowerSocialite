@@ -3,9 +3,9 @@ package providers
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/ArtisanCloud/PowerSocialite/v4/auth"
 	"github.com/ArtisanCloud/PowerSocialite/v4/config"
 	"github.com/ArtisanCloud/PowerSocialite/v4/contracts"
-	"github.com/ArtisanCloud/PowerSocialite/v4/kernel"
 	"github.com/ArtisanCloud/PowerSocialite/v4/models"
 	"github.com/ArtisanCloud/PowerSocialite/v4/utils/object"
 	"golang.org/x/oauth2"
@@ -147,7 +147,7 @@ func (p *BaseProvider) SetScopeSeparator(scopeSeparator string) *BaseProvider {
 }
 
 func (p *BaseProvider) Client() *http.Client {
-	return kernel.HTTPClientWithFallBack(p.HTTPClient)
+	return auth.HTTPClientWithFallBack(p.HTTPClient)
 }
 
 func (p *BaseProvider) SetFormatScopes(scopes []string, scopeSeparator string) string {
