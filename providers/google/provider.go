@@ -3,11 +3,13 @@ package google
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ArtisanCloud/PowerSocialite/v4/auth"
 	"github.com/ArtisanCloud/PowerSocialite/v4/contracts"
-	"github.com/ArtisanCloud/PowerSocialite/v4/kernel"
 	"github.com/ArtisanCloud/PowerSocialite/v4/models"
 	"github.com/ArtisanCloud/PowerSocialite/v4/providers"
+	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 	"io"
 	"net/http"
 	"net/url"
@@ -23,8 +25,26 @@ type Provider struct {
 	authCodeOptions []oauth2.AuthCodeOption
 }
 
-func NewProvider(config *Config) *Provider {
-	baseProvider := providers.NewBaseProvider(&config.BaseConfig)
+func NewProvider(config *Config) (*Provider, error) {
+	if config == nil {
+		return nil, errors.New("config is nil")
+	}
+
+	if config.BaseConfig.Scopes == nil || len(config.BaseConfig.Scopes) == 0 {
+		config.BaseConfig.Scopes = []string{"email"}
+	}
+	if config.BaseConfig.AuthUrl == "" {
+		config.BaseConfig.AuthUrl = google.Endpoint.AuthURL
+	}
+	if config.BaseConfig.TokenUrl == "" {
+		config.BaseConfig.TokenUrl = google.Endpoint.TokenURL
+	}
+
+	baseProvider, err := providers.NewBaseProvider(&config.BaseConfig)
+	if err != nil {
+		return nil, err
+	}
+
 	provider := &Provider{
 		BaseProvider: baseProvider,
 		config:       config,
@@ -33,11 +53,7 @@ func NewProvider(config *Config) *Provider {
 		},
 	}
 
-	if config.BaseConfig.Scope == nil || len(config.BaseConfig.Scope) == 0 {
-		config.BaseConfig.Scope = []string{"email"}
-	}
-
-	return provider
+	return provider, nil
 }
 
 // StartAuth asks Google for an authentication endpoint.
@@ -105,7 +121,7 @@ func (p *Provider) UserFromSession(session contracts.ISession) (*models.User, er
 // RefreshToken get new access token based on the refresh token
 func (p *Provider) RefreshToken(refreshToken string) (*oauth2.Token, error) {
 	token := &oauth2.Token{RefreshToken: refreshToken}
-	ts := p.OAuthConfig.TokenSource(kernel.ContextForClient(p.Client()), token)
+	ts := p.OAuthConfig.TokenSource(auth.ContextForClient(p.Client()), token)
 	newToken, err := ts.Token()
 	if err != nil {
 		return nil, err
@@ -154,8 +170,8 @@ func (p *Provider) SetAccessType(at string) {
 	p.authCodeOptions = append(p.authCodeOptions, oauth2.SetAuthURLParam("access_type", at))
 }
 
-// UnmarshalSession will unmarshal a JSON string into a session.
-func (p *Provider) UnmarshalSession(data string) (contracts.ISession, error) {
+// GetSession will unmarshal a JSON string into a session.
+func (p *Provider) GetSession(data string) (contracts.ISession, error) {
 	sess := &Session{}
 	err := json.NewDecoder(strings.NewReader(data)).Decode(sess)
 	return sess, err

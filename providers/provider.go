@@ -3,9 +3,9 @@ package providers
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/ArtisanCloud/PowerSocialite/v4/auth"
 	"github.com/ArtisanCloud/PowerSocialite/v4/config"
 	"github.com/ArtisanCloud/PowerSocialite/v4/contracts"
-	"github.com/ArtisanCloud/PowerSocialite/v4/kernel"
 	"github.com/ArtisanCloud/PowerSocialite/v4/models"
 	"github.com/ArtisanCloud/PowerSocialite/v4/utils/object"
 	"golang.org/x/oauth2"
@@ -39,15 +39,25 @@ type BaseProvider struct {
 	BuildAuthURLFromBase func(url string) string
 }
 
-func NewBaseProvider(config *config.BaseConfig) *BaseProvider {
+func NewBaseProvider(config *config.BaseConfig) (*BaseProvider, error) {
 
 	base := &BaseProvider{
 		expiresInKey:    "expires_in",
 		accessTokenKey:  "access_token",
 		refreshTokenKey: "refresh_token",
+		OAuthConfig: &oauth2.Config{
+			ClientID:     config.ClientId,
+			ClientSecret: config.ClientSecret,
+			Endpoint: oauth2.Endpoint{
+				AuthURL:  config.AuthUrl,
+				TokenURL: config.TokenUrl,
+			},
+			RedirectURL: config.RedirectUrl,
+			Scopes:      config.Scopes,
+		},
 	}
 
-	return base
+	return base, nil
 }
 
 // Name is the name used to retrieve this provider later.
@@ -137,7 +147,7 @@ func (p *BaseProvider) SetScopeSeparator(scopeSeparator string) *BaseProvider {
 }
 
 func (p *BaseProvider) Client() *http.Client {
-	return kernel.HTTPClientWithFallBack(p.HTTPClient)
+	return auth.HTTPClientWithFallBack(p.HTTPClient)
 }
 
 func (p *BaseProvider) SetFormatScopes(scopes []string, scopeSeparator string) string {

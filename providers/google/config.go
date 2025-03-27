@@ -4,7 +4,7 @@ import "github.com/ArtisanCloud/PowerSocialite/v4/config"
 
 type Config struct {
 	config.BaseConfig
-
+	ProjectId             string   `json:"projectId" yaml:"project_id"`
 	ResponseType          string   `json:"responseType" yaml:"response_type"`
 	State                 string   `json:"state,omitempty" yaml:"state,omitempty"`
 	AccessType            string   `json:"accessType,omitempty" yaml:"access_type,omitempty"`

@@ -1,4 +1,4 @@
-package kernel
+package auth
 
 import (
 	"crypto/rand"
@@ -12,15 +12,19 @@ import (
 	"net/url"
 )
 
-func StartAuthHandler(p contracts.IProvider, res http.ResponseWriter, req *http.Request) {
-	authUrl, err := GetAuthURL(p, res, req)
+func StartAuthHandler(p contracts.IProvider, needRedirect bool, res http.ResponseWriter, req *http.Request) (contracts.ISession, string, error) {
+	iSession, authUrl, err := GetAuthURL(p, res, req)
+	//fmt.Println(authUrl)
+
 	if err != nil {
 		res.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(res, err)
-		return
+		return nil, authUrl, err
 	}
-
-	http.Redirect(res, req, authUrl, http.StatusTemporaryRedirect)
+	if needRedirect {
+		http.Redirect(res, req, authUrl, http.StatusTemporaryRedirect)
+	}
+	return iSession, authUrl, err
 }
 
 // SetState sets the state string associated with the given request.
@@ -57,24 +61,24 @@ var GetState = func(req *http.Request) string {
 	return params.Get("state")
 }
 
-func GetAuthURL(p contracts.IProvider, res http.ResponseWriter, req *http.Request) (string, error) {
+func GetAuthURL(p contracts.IProvider, res http.ResponseWriter, req *http.Request) (contracts.ISession, string, error) {
 
-	sess, err := p.StartAuth(SetState(req))
+	iSess, err := p.StartAuth(SetState(req))
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
 
-	url, err := sess.GetAuthURL()
+	authUrl, err := iSess.GetAuthURL()
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
 
-	return url, err
+	return iSess, authUrl, err
 }
 
 var CompleteUserAuth = func(p contracts.IProvider, sess contracts.ISession, res http.ResponseWriter, req *http.Request) (*models.User, error) {
-
-	err := validateState(req, sess)
+	var err error
+	err = ValidateState(req, sess)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +108,7 @@ var CompleteUserAuth = func(p contracts.IProvider, sess contracts.ISession, res 
 	return gu, err
 }
 
-func validateState(req *http.Request, sess contracts.ISession) error {
+func ValidateState(req *http.Request, sess contracts.ISession) error {
 	rawAuthURL, err := sess.GetAuthURL()
 	if err != nil {
 		return err
