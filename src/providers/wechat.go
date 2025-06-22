@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ArtisanCloud/PowerLibs/v3/http/helper"
-	"github.com/ArtisanCloud/PowerLibs/v3/object"
-	"github.com/ArtisanCloud/PowerSocialite/v3/src/response/wechat"
 	"io/ioutil"
 	"net/http"
 	"reflect"
 	"time"
+
+	"github.com/ArtisanCloud/PowerLibs/v3/http/helper"
+	"github.com/ArtisanCloud/PowerLibs/v3/object"
+	"github.com/ArtisanCloud/PowerSocialite/v3/src/response/wechat"
 )
 
 type WeChat struct {
@@ -47,6 +48,11 @@ func NewWeChat(config *object.HashMap) *WeChat {
 	wechat.OverrideGetTokenFields()
 
 	return wechat
+}
+
+// 修改微信 API 基础 URL
+func (provider *WeChat) SetBaseUrl(url string) {
+	provider.baseURL = url
 }
 
 func (provider *WeChat) GetHttpClient() (*helper.RequestHelper, error) {
