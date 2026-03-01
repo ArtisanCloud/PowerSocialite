@@ -3,6 +3,10 @@ package providers
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"time"
+
+	"github.com/ArtisanCloud/PowerLibs/v3/http/contract"
 	"github.com/ArtisanCloud/PowerLibs/v3/http/helper"
 	"github.com/ArtisanCloud/PowerLibs/v3/object"
 	"github.com/ArtisanCloud/PowerSocialite/v3/src/exceptions"
@@ -113,15 +117,35 @@ func (provider *WeCom) WithApiAccessToken(apiAccessToken string) *WeCom {
 func (provider *WeCom) GetHttpClient() (*helper.RequestHelper, error) {
 	if provider.httpHelper != nil {
 		return provider.httpHelper, nil
-	} else {
-		h, err := helper.NewRequestHelper(&helper.Config{
-			BaseUrl: provider.baseUrl,
-		})
-
-		h.WithMiddleware(helper.HttpDebugMiddleware(provider.GetConfig().GetBool("http_debug", false)))
-
-		return h, err
 	}
+
+	proxyUri := provider.GetConfig().GetString("http.proxy_uri", "")
+	timeout := provider.GetConfig().GetFloat64("http.timeout", 5)
+	objTransport := provider.GetConfig().Get("http.transport", nil)
+
+	var transport http.RoundTripper = nil
+	if objTransport != nil {
+		if t, ok := objTransport.(http.RoundTripper); ok {
+			transport = t
+		}
+	}
+
+	h, err := helper.NewRequestHelper(&helper.Config{
+		BaseUrl: provider.baseUrl,
+		ClientConfig: &contract.ClientConfig{
+			ProxyURI:  proxyUri,
+			Timeout:   time.Duration(timeout * float64(time.Second)),
+			Transport: transport,
+		},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	h.WithMiddleware(helper.HttpDebugMiddleware(provider.GetConfig().GetBool("http_debug", false)))
+
+	return h, nil
 
 }
 
