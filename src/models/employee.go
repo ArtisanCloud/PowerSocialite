@@ -33,5 +33,5 @@ type Employee struct {
 	OpenUserID      string          `json:"open_userid"`
 	OpenID          string          `json:"-"`
 	CorpID          string          `json:"-"`
-	DirectLeader    []string        `json:"direct_leader"`
+	DirectLeader	[]string		`json:"direct_leader"`
 }
