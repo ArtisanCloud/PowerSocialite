@@ -318,7 +318,7 @@ func (provider *WeCom) requestApiAccessToken() (string, error) {
 	}
 
 	if outResponse.ErrCode > 0 {
-		defer (&exceptions.AuthorizeFailedException{}).HandleException(nil, "base.refresh.token", outResponse)
+		defer exceptions.NewAuthorizeFailedException().HandleException(nil, "base.refresh.token", outResponse)
 		if outResponse.ErrMSG == "" {
 			outResponse.ErrMSG = "unknow"
 		}
